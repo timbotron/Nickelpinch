@@ -4,6 +4,4 @@ Nickelpinch
 ## Contributors:
 Tim Habersack
 
-## Links:
-
-Mockups: http://lab.citracode.com/nikl
+This is a stub.
