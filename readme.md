@@ -8,7 +8,6 @@ It is open-source, and free to use.
 
 Documentation for Nickelpinch can be found on the [Nickelpinch.org website](http://nickelpinch.org).
 
-
 ### License
 
 Nickelpinch is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT)
