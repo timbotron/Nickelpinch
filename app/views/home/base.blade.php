@@ -17,7 +17,15 @@
     <![endif]-->
   </head>
   <body>
-    <h1>Hello, world!</h1>
+    @if(Auth::check())
+    @include('home.nav');
+    @else
+    <div class="container" style="text-align:center;">
+      <h1 style="margin:30px auto;">Nickelpinch</h1>
+    </div>
+    @endif
+
+    @yield('content')
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="/js/jquery.1.11.0.min.js"></script>
