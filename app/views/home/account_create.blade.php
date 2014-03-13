@@ -3,8 +3,9 @@
 @section('content')
 <div class="container">
 	<div class="row">
+		@if(Config::get('nickelpinch.gate_open'))
 		<div class="col-sm-6 col-sm-offset-3 col-md-4 col-md-offset-4">
-			{{ Form::open(array('url' => 'register','class'=>'form')) }}
+			{{ Form::open(array('url' => 'register','class'=>'form','autocomplete'=>'off')) }}
 			<fieldset>
 			<legend>Create an Account</legend>
 			@foreach($errors->all() as $message)
@@ -39,6 +40,12 @@
 
 			{{ Form::close() }}
 		</div>
+		@else
+		<div class="col-md-6 col-md-offset-3">
+			<h3>We're at maximum capacity..</h3>
+			<p class="lead">.. Or something. This instance has disabled new account signups. Take it up with them! We're innocent.</p>
+		</div>
+		@endif
 	</div>
 
 </div>

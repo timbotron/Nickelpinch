@@ -20,7 +20,7 @@ return array(
 	|
 	*/
 
-	'gate_open'=>TRUE,
+	'gate_open'=>true,
 
 	/*
 	|--------------------------------------------------------------------------
@@ -32,11 +32,12 @@ return array(
 	*/
 
 	'ranks'	=> array(
-			0	=> 'Free User',
-			10	=> 'Premium User',
+			0	=> 'Inactive User',
+			10	=> 'Free User',
+			20	=> 'Premium User',
 			255 => 'Administrator',
 	),
-	'default_rank'	=> 0,
+	'default_rank'	=> 10,
 
 	/*
 	|--------------------------------------------------------------------------

@@ -15,3 +15,5 @@ Route::get('/', 'HomeController@home');
 
 Route::get('/register', 'HomeController@register');
 Route::post('/register', 'HomeController@process_register');
+
+Route::post('/login','HomeController@login');

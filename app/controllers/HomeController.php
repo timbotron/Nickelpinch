@@ -49,4 +49,31 @@ class HomeController extends BaseController {
 
 	}
 
+	public function login()
+	{
+		$rules = [
+					'username' 		=> 'required',
+					'password'		=> 'required',
+		];
+
+		$validator = Validator::make(Input::all(), $rules);
+
+		if($validator->passes())
+		{
+			$remember = Input::get('remember_me')!='' ? true : false;
+			if(Auth::attempt(array('username' => Input::get('username'), 'password' => Input::get('username')),$remember))
+			{
+			    return Redirect::to('/home');
+			}
+
+			$validator->getMessageBag()->add('bad', 'Username or password invalid');
+			return Redirect::to('/')->withErrors($validator);
+			
+		}
+		else
+		{
+			return Redirect::to('/')->withErrors($validator);
+		}
+	}
+
 }
