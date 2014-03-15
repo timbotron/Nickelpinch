@@ -39,7 +39,8 @@ class HomeController extends BaseController {
 			$user->save();
 
 			// Hash::make($password);
-			return Redirect::to('/');
+			$validator->getMessageBag()->add('good', 'Account Created; login to proceed!');
+			return Redirect::to('/')->withErrors($validator);
 		}
 		else
 		{
