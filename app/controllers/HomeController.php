@@ -62,9 +62,10 @@ class HomeController extends BaseController {
 		if($validator->passes())
 		{
 			$remember = Input::get('remember_me')!='' ? true : false;
-			if(Auth::attempt(array('username' => Input::get('username'), 'password' => Input::get('username')),$remember))
+			//dd(Auth::attempt(array('username' => Input::get('username'), 'password' => Input::get('password')),$remember));
+			if(Auth::attempt(array('username' => Input::get('username'), 'password' => Input::get('password')),$remember))
 			{
-			    return Redirect::to('/home');
+			    return Redirect::intended('home');
 			}
 
 			$validator->getMessageBag()->add('bad', 'Username or password invalid');

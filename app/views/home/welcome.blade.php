@@ -4,7 +4,7 @@
 <div class="container">
 	<div class="row">
 		<div class="hidden-xs col-md-5 col-md-offset-1">
-			<h2>Welcome to Nickelpinch</h2>
+			<h2>This is a Nickelpinch instance</h2>
 			<p class="lead">Nickelpinch is a web-based, personal finance application. Features include a simple intuitive interface, budgeting, reports, etc.</p>
 			<p class="lead">It is open-source, and free to use.</p>
 			<p class="lead">For more information, please visit our site</p>

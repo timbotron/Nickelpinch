@@ -26,7 +26,7 @@ $app = new Illuminate\Foundation\Application;
 
 $env = $app->detectEnvironment(array(
 
-	'local' => array('debian-70rc1-x64-vbox4210'),
+	'local' => array('packer-virtualbox'),
 	'production' => array('starbase188')
 ));
 

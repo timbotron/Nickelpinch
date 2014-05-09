@@ -19,6 +19,7 @@ class InitiumTablum extends Migration {
 	        $table->string('email')->unique();
 	        $table->string('username')->unique();
 	        $table->string('password');
+	        $table->string('remember_token');
 	        $table->tinyInteger('rank')->unsigned();
 	        $table->tinyInteger('currency')->unsigned();
 	        $table->integer('default_pmt_method')->unsigned();
@@ -98,12 +99,13 @@ class InitiumTablum extends Migration {
 	public function down()
 	{
 		//
-		Schema::drop('users');
 		Schema::drop('password_reminders');
-		Schema::drop('user_categories');
+		Schema::drop('entry_sections');
 		Schema::drop('entries');
 		Schema::drop('entry_data');
+		Schema::drop('user_categories');
 		Schema::drop('stores');
+		Schema::drop('users');
 	}
 
 }

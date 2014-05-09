@@ -13,7 +13,16 @@
 
 Route::get('/', 'HomeController@home');
 
+Route::post('/login','HomeController@login');
 Route::get('/register', 'HomeController@register');
 Route::post('/register', 'HomeController@process_register');
 
-Route::post('/login','HomeController@login');
+Route::get('/home', 'AppController@main');
+Route::get('/budget', 'AppController@budget');
+Route::post('/budget', 'AppController@budget');
+
+
+
+
+
+//Route::get('/reports', 'ReportController@history');
