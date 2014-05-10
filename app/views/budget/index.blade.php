@@ -55,7 +55,7 @@
 						</span>
 					</td>
 					<td class="tool-row">
-						<a href="/budget/edit/{{ $cat->ucid }}" class="btn btn-warning btn-sm">
+						<a href="/budget/{{ $cat->ucid }}/edit" class="btn btn-warning btn-sm">
 							<span class="glyphicon glyphicon-pencil"></span>
 						</a>
 						<a href="/report/{{ $cat->ucid }}" class="btn btn-default btn-sm">

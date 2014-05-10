@@ -43,6 +43,7 @@ class InitiumTablum extends Migration {
 	        $table->decimal('saved', 22, 2);
 	        $table->tinyInteger('class')->unsigned(); // this will be in config. 10=cc, 20=normal, 30=savings, 40=external savings, 255=archived
 	        $table->tinyInteger('due_date')->unsigned(); // optional, just for when class is 10
+	        $table->integer('rank')->unsigned();
 	        $table->timestamps();
 
 	        $table->foreign('uid')->references('uid')->on('users');
