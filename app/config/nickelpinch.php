@@ -53,5 +53,28 @@ return array(
 	),
 	'default_currency' => 0,
 
+	/*
+	|--------------------------------------------------------------------------
+	| User Category Classes
+	|--------------------------------------------------------------------------
+	*/
+
+	'uc_classes' => array(
+		'credit_card'=>10,
+		'standard'=>20,
+		'savings'=>30,
+		'ext_savings'=>40,
+		'archived'=>255
+		),
+
+	'uc_class_def' => array(
+		10 => 'Credit Card',
+		20 => 'Standard',
+		30 => 'Savings',
+		40 => 'External Savings',
+		255 => 'Archived'
+		)
+
+
 
 	);

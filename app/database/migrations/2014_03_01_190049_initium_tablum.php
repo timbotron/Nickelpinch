@@ -42,7 +42,7 @@ class InitiumTablum extends Migration {
 	        $table->decimal('top_limit', 22, 2);
 	        $table->decimal('saved', 22, 2);
 	        $table->tinyInteger('class')->unsigned(); // this will be in config. 10=cc, 20=normal, 30=savings, 40=external savings, 255=archived
-	        $table->date('due_date'); // optional, just for when class is 10
+	        $table->tinyInteger('due_date')->unsigned(); // optional, just for when class is 10
 	        $table->timestamps();
 
 	        $table->foreign('uid')->references('uid')->on('users');
@@ -102,7 +102,6 @@ class InitiumTablum extends Migration {
 		Schema::drop('password_reminders');
 		Schema::drop('entry_sections');
 		Schema::drop('entries');
-		Schema::drop('entry_data');
 		Schema::drop('user_categories');
 		Schema::drop('stores');
 		Schema::drop('users');

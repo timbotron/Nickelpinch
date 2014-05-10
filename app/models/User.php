@@ -21,6 +21,11 @@ class User extends Eloquent implements UserInterface, RemindableInterface {
 
 	protected $primaryKey = "uid";
 
+	public function user_categories()
+	{
+		return $this->hasMany('User_category', 'uid', 'uid');
+	}
+
 	/**
 	 * Get the unique identifier for the user.
 	 *

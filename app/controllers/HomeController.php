@@ -2,6 +2,12 @@
 
 class HomeController extends BaseController {
 
+	public function __construct()
+	{
+		parent::__construct();
+		View::share('chosen_page',false);
+	}
+
 	
 
 	public function home()
