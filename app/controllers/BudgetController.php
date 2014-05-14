@@ -14,7 +14,7 @@ class BudgetController extends \BaseAppController {
 		View::share('chosen_page','budget');
 		View::share('dom_dd',$this->dom_dd);
 		$form_data = array('url' => 'budget','class'=>'form well','autocomplete'=>'off','method'=>'POST');
-		return View::make('budget.index',['edit'=>false,'form_data'=>$form_data,'the_class'=>'standard']);
+		return View::make('budget.index',['form_data'=>$form_data,'the_class'=>'standard']);
 	}
 
 
@@ -26,11 +26,20 @@ class BudgetController extends \BaseAppController {
 	public function store()
 	{
 		$rules = [
-					'category_name' => 'required|between:4,255',
+					'category_name' => 'required|between:3,255',
 					'top_limit'		=> 'required|numeric',
 					'due_date'		=> 'integer',
 					'class'			=> 'required'
 		];
+		if(Input::get('class')=='bank_account') // means we're creating a bank account
+		{
+			$rules = [];
+			$rules = [
+					'category_name' => 'required|between:3,255',
+					'balance'		=> 'required|numeric',
+					'class'			=> 'required'
+			];
+		}
 
 		$validator = Validator::make(Input::all(), $rules);
 		if($validator->passes())
@@ -40,9 +49,11 @@ class BudgetController extends \BaseAppController {
 			$uc = new User_category;
 			$uc->uid = $this->user->uid;
 			$uc->category_name = Input::get('category_name');
-			$uc->top_limit = Input::get('top_limit');
-			$uc->rank = Input::get('rank');
 			$uc->class = $this->nikl_config['uc_classes'][Input::get('class')];
+			$uc->rank = Input::get('rank');
+			
+			if(Input::get('class')=='bank_account') $uc->balance = Input::get('balance');
+			else $uc->top_limit = Input::get('top_limit');
 
 			if(Input::get('class')=='credit_card') $uc->due_date = Input::get('due_date');
 
@@ -77,7 +88,7 @@ class BudgetController extends \BaseAppController {
 				//echo $key.' '.$uc->class;
 				if($class==$uc->class) $the_class = $key;
 			}
-			return View::make('budget.edit',['uc'=>$uc,'edit'=>true,'form_data'=>$form_data,'the_class'=>$the_class]);
+			return View::make('budget.edit',['uc'=>$uc,'form_data'=>$form_data,'the_class'=>$the_class]);
 	}
 
 
@@ -93,7 +104,7 @@ class BudgetController extends \BaseAppController {
 		if($uc->uid != $this->user->uid) return Redirect::to('/budget');
 		
 		$rules = [
-					'category_name' => 'required|between:4,255',
+					'category_name' => 'required|between:3,255',
 					'top_limit'		=> 'required|numeric',
 					'due_date'		=> 'integer',
 					'rank'		=> 'integer',
@@ -108,9 +119,11 @@ class BudgetController extends \BaseAppController {
 			$uc->category_name = Input::get('category_name');
 			$uc->top_limit = Input::get('top_limit');
 			$uc->rank = Input::get('rank');
-			$uc->class = $this->nikl_config['uc_classes'][Input::get('class')];
+			if(Input::get('is_archive_feature')) $uc->class = Input::get('class');
 
-			if(Input::get('class')=='credit_card') $uc->due_date = Input::get('due_date');
+			else $uc->class = $this->nikl_config['uc_classes'][Input::get('class')];
+
+			if(Input::get('class')=='credit_card' || Input::get('class') == 10) $uc->due_date = Input::get('due_date');
 
 			$uc->save();
 
@@ -119,14 +132,7 @@ class BudgetController extends \BaseAppController {
 		}
 		else
 		{
-			View::share('chosen_page','budget');
-			View::share('dom_dd',$this->dom_dd);
-			$form_data = array('url' => 'budget/'.$id,'class'=>'form well','autocomplete'=>'off','method'=>'PUT');
-			foreach($this->nikl_config['uc_classes'] as $key=>$class)
-			{
-				//echo $key.' '.$uc->class;
-				if($class==$uc->class) $the_class = $key;
-			}
+			
 			return Redirect::to('/budget/'.$id.'/edit')->withErrors($validator)->withInput();
 		}
 	}
@@ -141,6 +147,13 @@ class BudgetController extends \BaseAppController {
 	public function destroy($id)
 	{
 		//
+	}
+
+	public function add_bank()
+	{
+		View::share('chosen_page','budget');
+		$form_data = array('url' => 'budget','class'=>'form well','autocomplete'=>'off','method'=>'POST');
+		return View::make('budget.add_bank_parent',['form_data'=>$form_data,'the_class'=>'bank_account']);
 	}
 
 

@@ -31,41 +31,53 @@
 					<th>Type</th>
 					<th></th>
 				</tr>
+				<?php $sum = 0.00;?>
 				@foreach($user_data->user_categories as $cat)
-				@if($cat->class != 20)
-				<tr class="c{{ $cat->class }}" style="display:none;">
-				@else
-				<tr class="c{{ $cat->class }}">
+				@if($cat->class != 8)
+					<?php
+						if($cat->class==20) $sum += $cat->top_limit;
+					?>
+					@if($cat->class != 20)
+					<tr class="c{{ $cat->class }}" style="display:none;">
+					@else
+					<tr class="c{{ $cat->class }}">
+					@endif
+						<td>{{ $cat->category_name }}</td>
+						<td>{{ $nikl_config['currency_options'][$user_data->currency].$cat->top_limit }}</td>
+						<td>
+							@if($nikl_config['uc_class_def'][$cat->class] == 'Standard')
+							<span class="label label-primary">
+							@elseif($nikl_config['uc_class_def'][$cat->class] == 'Credit Card')
+							<span class="label label-primary">
+							@elseif($nikl_config['uc_class_def'][$cat->class] == 'Savings')
+							<span class="label label-success">
+							@elseif($nikl_config['uc_class_def'][$cat->class] == 'External Savings')
+							<span class="label label-success">
+							@else
+							<span class="label label-default">
+							@endif
+							{{ $nikl_config['uc_class_def'][$cat->class] }}
+							</span>
+						</td>
+						<td class="tool-row">
+							<a href="/budget/{{ $cat->ucid }}/edit" class="btn btn-warning btn-sm">
+								<span class="glyphicon glyphicon-pencil"></span>
+							</a>
+							<a href="/report/{{ $cat->ucid }}" class="btn btn-default btn-sm">
+								<span class="glyphicon glyphicon-stats"></span>
+							</a>
+
+						</td>
+
+					</tr>
 				@endif
-					<td>{{ $cat->category_name }}</td>
-					<td>{{ $nikl_config['currency_options'][$user_data->currency].$cat->top_limit }}</td>
-					<td>
-						@if($nikl_config['uc_class_def'][$cat->class] == 'Standard')
-						<span class="label label-primary">
-						@elseif($nikl_config['uc_class_def'][$cat->class] == 'Credit Card')
-						<span class="label label-primary">
-						@elseif($nikl_config['uc_class_def'][$cat->class] == 'Savings')
-						<span class="label label-success">
-						@elseif($nikl_config['uc_class_def'][$cat->class] == 'External Savings')
-						<span class="label label-success">
-						@else
-						<span class="label label-default">
-						@endif
-						{{ $nikl_config['uc_class_def'][$cat->class] }}
-						</span>
-					</td>
-					<td class="tool-row">
-						<a href="/budget/{{ $cat->ucid }}/edit" class="btn btn-warning btn-sm">
-							<span class="glyphicon glyphicon-pencil"></span>
-						</a>
-						<a href="/report/{{ $cat->ucid }}" class="btn btn-default btn-sm">
-							<span class="glyphicon glyphicon-stats"></span>
-						</a>
-
-					</td>
-
-				</tr>
 				@endforeach
+				<tr class="tr-sum">
+					<td><strong>TOTAL</strong></td>
+					<td>{{ $nikl_config['currency_options'][$user_data->currency]. $sum }}</td>
+					<td></td>
+					<td></td>
+				</tr>
 			</table>
 
 			@else

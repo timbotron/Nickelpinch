@@ -60,6 +60,7 @@ return array(
 	*/
 
 	'uc_classes' => array(
+		'bank_account'=>8,
 		'credit_card'=>10,
 		'standard'=>20,
 		'savings'=>30,

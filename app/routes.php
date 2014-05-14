@@ -23,10 +23,7 @@ Route::group(array('before'=>'auth'), function()
 	Route::get('/home', 'AppController@main');
 
 	Route::resource('/budget', 'BudgetController');
-	//Route::get('/budget', 'AppController@budget');
-	//Route::post('/budget', 'AppController@save_category');
-	//Route::get('/budget/edit/{ucid}', 'AppController@edit_category');
-	//Route::post('/budget/edit/{ucid}', 'AppController@save_category');
+	Route::get('/add_bank', 'BudgetController@add_bank');
 });
 
 
