@@ -14,7 +14,13 @@ class BaseAppController extends Controller {
 		$this->currencies = Config::get('nickelpinch.currency_options');
 		View::share('currencies',$this->currencies);
 
-		$this->user = User::with('user_categories')->where('users.uid','=',Auth::user()->uid)->get()[0];
+		$this->user = User::with(['user_categories'=>function($query)
+			{
+				$query->orderBy('user_categories.rank','ASC');
+			}])->where('users.uid','=',Auth::user()->uid)->get()[0];
+
+		dd($this->user);
+
 		View::share('user_data',$this->user);
 
 		$this->nikl_config = Config::get('nickelpinch');
