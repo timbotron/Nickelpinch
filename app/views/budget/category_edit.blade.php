@@ -15,7 +15,7 @@
 				<div class="form-group">
 					{{ Form::label('top_limit', 'Monthly Spending Limit'); }}
 					<div class="input-group">
-  						<span class="input-group-addon">{{ $nikl_config['currency_options'][$user_data->currency] }}</span> 
+  						<span class="input-group-addon">{{ $currency }}</span> 
 						{{ Form::input('number','top_limit',$uc->top_limit,array('class'=>'form-control')) }}
 					</div>
 				</div>

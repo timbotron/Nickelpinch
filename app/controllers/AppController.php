@@ -13,8 +13,6 @@ class AppController extends BaseAppController {
 	{
 		if($this->_is_new()) return Redirect::to('welcome');
 
-		dd(count($this->user->user_categories));
-
 		View::share('chosen_page','home');
 		return View::make('app.main');
 	}
@@ -33,8 +31,9 @@ class AppController extends BaseAppController {
 		$count = 0;
 		foreach($this->user->user_categories as $cat)
 		{
-			if($cat->class != 8 || $cat->class != 255) $count++;
+			if($cat->class != 8 && $cat->class != 255) $count++;
 		}
+
 
 
 

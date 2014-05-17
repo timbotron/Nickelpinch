@@ -25,12 +25,16 @@ class BaseAppController extends Controller {
 		$this->yellow = 'label label-warning';
 		$this->red = 'label label-danger';
 
+		$this->budget_needs = 0;
+
 		foreach($this->user->user_categories as &$cat)
 		{
-			if($cat->class != 8 && $cat->class != 255)
+			if($cat->class == 20)
 			{
 				// need to set color of category label depending on how much money is left. 0-70 is green. 71-95 yellow, 95+ red
 				$tmp = ($cat->balance + $cat->saved) / $cat->top_limit;
+
+				$this->budget_needs += $cat->top_limit - $cat->saved - $cat->balance;
 
 				if($tmp < 1)
 				{
@@ -39,23 +43,40 @@ class BaseAppController extends Controller {
 					else $cat->color = $this->yellow;
 				}
 				else $cat->color = $this->red;
+				
+			}
 
+			if($cat->class == 40 || $cat->class == 30)
+			{
+				// need to set color of category label depending on how much money is left to save. 0-30 is red. 31-75 yellow, 76+ green
+				$tmp = $cat->balance / $cat->top_limit;
 
-				if($cat->class == 8)
+				$this->budget_needs += $cat->top_limit - $cat->saved;
+
+				if($tmp < 0.75)
 				{
-					$this->bank_info = array();
-					$this->bank_info['name'] = $cat->category_name;
-					$this->bank_info['balance'] = $cat->balance;
+					// yellow or green?
+					if($tmp < 0.30) $cat->color = $this->red;
+					else $cat->color = $this->yellow;
 				}
+				else $cat->color = $this->green;
+			}
+
+			if($cat->class == 8)
+			{
+				$this->bank_info = array();
+				$this->bank_info['name'] = $cat->category_name;
+				$this->bank_info['balance'] = $cat->balance;
 			}
 			
 		}
-		dd($this->user->user_categories);
+
+		$this->nikl_config = Config::get('nickelpinch');
 
 		View::share('bank_info',$this->bank_info);
 		View::share('user_data',$this->user);
+		View::share('currency',$this->nikl_config['currency_options'][$this->user->currency]);
 
-		$this->nikl_config = Config::get('nickelpinch');
 		View::share('nikl_config',$this->nikl_config);
 
 

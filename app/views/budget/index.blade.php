@@ -43,7 +43,7 @@
 					<tr class="c{{ $cat->class }}">
 					@endif
 						<td>{{ $cat->category_name }}</td>
-						<td>{{ $nikl_config['currency_options'][$user_data->currency].$cat->top_limit }}</td>
+						<td>{{ $currency.$cat->top_limit }}</td>
 						<td>
 							@if($nikl_config['uc_class_def'][$cat->class] == 'Standard')
 							<span class="label label-primary">
@@ -74,7 +74,7 @@
 				@endforeach
 				<tr class="tr-sum">
 					<td><strong>TOTAL</strong></td>
-					<td>{{ $nikl_config['currency_options'][$user_data->currency]. $sum }}</td>
+					<td>{{ $currency. $sum }}</td>
 					<td></td>
 					<td></td>
 				</tr>

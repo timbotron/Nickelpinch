@@ -17,7 +17,7 @@
 				<div class="form-group">
 					{{ Form::label('balance', 'Current Balance'); }}
 					<div class="input-group">
-  						<span class="input-group-addon">{{ $nikl_config['currency_options'][$user_data->currency] }}</span> 
+  						<span class="input-group-addon">{{ $currency }}</span> 
 						{{ Form::input('number','balance',null,array('class'=>'form-control')) }}
 					</div>
 				</div>
