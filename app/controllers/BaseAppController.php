@@ -26,6 +26,8 @@ class BaseAppController extends Controller {
 		$this->red = 'label label-danger';
 
 		$this->budget_needs = 0;
+		$this->remaining_budget = 0;
+		$this->in_saved = 0;
 
 		foreach($this->user->user_categories as &$cat)
 		{
@@ -34,7 +36,9 @@ class BaseAppController extends Controller {
 				// need to set color of category label depending on how much money is left. 0-70 is green. 71-95 yellow, 95+ red
 				$tmp = ($cat->balance + $cat->saved) / $cat->top_limit;
 
-				$this->budget_needs += $cat->top_limit - $cat->saved - $cat->balance;
+				$this->remaining_budget += $cat->top_limit - $cat->saved - $cat->balance;
+
+				$this->in_saved += $cat->saved;
 
 				if($tmp < 1)
 				{
@@ -51,7 +55,9 @@ class BaseAppController extends Controller {
 				// need to set color of category label depending on how much money is left to save. 0-30 is red. 31-75 yellow, 76+ green
 				$tmp = $cat->balance / $cat->top_limit;
 
-				$this->budget_needs += $cat->top_limit - $cat->saved;
+				$this->remaining_budget += $cat->top_limit - $cat->saved;
+
+				if($cat->class == 30) $this->in_saved += $cat->saved;
 
 				if($tmp < 0.75)
 				{
@@ -69,6 +75,16 @@ class BaseAppController extends Controller {
 				$this->bank_info['balance'] = $cat->balance;
 			}
 			
+		}
+
+		if($this->bank_info)
+		{
+			$this->bank_info['remaining_budget'] = $this->remaining_budget;
+			$this->bank_info['in_saved'] = $this->in_saved;
+			$tmp = 0;
+			$tmp = $this->bank_info['balance'] - $this->remaining_budget - $this->in_saved;
+
+			$this->bank_info['remaining'] = $tmp;
 		}
 
 		$this->nikl_config = Config::get('nickelpinch');

@@ -13,6 +13,12 @@ $(document).ready(function()
 		});
 	});
 
+	if($('.budget-edit-view').length)
+	{
+		// hit appropriate class button for good labels/text
+		
+	}
+
 	$('.budget-add-buttons button').click(function()
 	{
 		if($('.budget-view').length)
@@ -57,7 +63,7 @@ $(document).ready(function()
 				$('form label[for="category_name"]').html('Savings Category Name');
 				$('form label[for="top_limit"]').html('Monthly Savings Goal');
 				$('form input[name="category_name"]').attr('placeholder','Enter Savings Category Name');
-				$('form input[name="class"]').val('savings');
+				$('form input[name="class"]').val('ext_savings');
 				$('.if-cc').hide();
 				$('form input[type="submit"]').val('Create External Savings Category');
 			}

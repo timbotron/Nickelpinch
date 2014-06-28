@@ -19,7 +19,7 @@
   </head>
   <body>
     @if(Auth::check())
-    @include('home.nav');
+    @include('home.nav')
     @else
     <div class="container" style="text-align:center;">
       <h1 style="margin:30px auto;">Nickelpinch</h1>
