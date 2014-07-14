@@ -1,6 +1,38 @@
 $(document).ready(function()
 {
 
+	// Entry Add
+
+	if($('.entry-add').length)
+	{
+		$('.using-manual-date').click(function()
+		{
+			if(this.checked)
+			{
+				$('.date-dd').hide();
+				$('.date-txt').show();
+			}
+			else
+			{
+				$('.date-dd').show();
+				$('.date-txt').hide();
+			}
+
+		});
+		$('.using-multi-cats').click(function()
+		{
+			if(this.checked)
+			{
+				$('.multi-cats').show();
+			}
+			else
+			{
+				$('.multi-cats').hide();
+			}
+
+		});
+	}
+
 	//Budget
 
 	$('.filter-budget input').click(function()

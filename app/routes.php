@@ -12,19 +12,22 @@
 */
 
 Route::get('/', 'HomeController@home');
-Route::post('/login','HomeController@login');
-Route::get('/login','HomeController@home');
-Route::get('/register', 'HomeController@register');
-Route::post('/register', 'HomeController@process_register');
+Route::post('login','HomeController@login');
+Route::get('login','HomeController@home');
+Route::get('register', 'HomeController@register');
+Route::post('register', 'HomeController@process_register');
 
 Route::group(array('before'=>'auth'), function()
 {
 
-	Route::get('/home', 'AppController@main');
-	Route::get('/welcome', 'AppController@welcome');
+	Route::get('home', 'AppController@main');
+	Route::get('welcome', 'AppController@welcome');
 
-	Route::resource('/budget', 'BudgetController');
-	Route::get('/add_bank', 'BudgetController@add_bank');
+	Route::resource('budget', 'BudgetController');
+	Route::get('add_bank', 'BudgetController@add_bank');
+
+	Route::get('add', 'EntryController@create');
+	Route::get('add/{target}', 'EntryController@create');
 });
 
 

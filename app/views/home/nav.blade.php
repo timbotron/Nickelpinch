@@ -8,10 +8,10 @@
         </div>
         <div class="collapse navbar-collapse">
           <ul class="nav navbar-nav navbar-right">
-            <li>
+            <li {{ $chosen_page=='home' ? 'class="active"' : '' }}>
               <a href="/home"><span class="glyphicon glyphicon-home"></span> Overview</a>
             </li>
-            <li>
+            <li {{ $chosen_page=='move' ? 'class="active"' : '' }}>
               <a href="#"><span class="glyphicon glyphicon-random"></span> Move</a>
             </li>
             <li>

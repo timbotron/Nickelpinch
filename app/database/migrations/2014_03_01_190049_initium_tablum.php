@@ -50,6 +50,7 @@ class InitiumTablum extends Migration {
 
 	    });
 
+	    /* NOT NOW, maybe at a later date. simple description fine for alpha
 	    Schema::create('stores', function($table)
 	    {
 	        $table->increments('sid');
@@ -58,13 +59,12 @@ class InitiumTablum extends Migration {
 
 	        $table->foreign('uid')->references('uid')->on('users');
 
-	    });
+	    });*/
 
 		Schema::create('entries', function($table)
 	    {
 	        $table->increments('entid');
 	        $table->integer('uid')->unsigned()->index();
-	        $table->integer('sid')->unsigned()->index();
 	        $table->integer('paid_to')->unsigned()->index(); // will cache this for user, where 0->debit card, items from user_categories
 	        $table->date('purchase_date');
 	        $table->decimal('total_amount', 22, 2);
@@ -72,7 +72,7 @@ class InitiumTablum extends Migration {
 	        $table->tinyInteger('type')->unsigned(); // this will be in config. 10=purchase, 20=move, 30=cc payment, 40=bill
 
 	        $table->foreign('uid')->references('uid')->on('users');
-	        $table->foreign('sid')->references('sid')->on('stores');
+	        //$table->foreign('sid')->references('sid')->on('stores');
 
 	    });
 
