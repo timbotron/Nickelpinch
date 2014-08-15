@@ -1,6 +1,65 @@
 $(document).ready(function()
 {
 
+	// Ajax-me
+
+	$('.ajax-me').submit(function()
+    {
+        console.log('submitted! ');
+        // // console.log('submitted form');
+        var $identifier = $(this).attr('data-id');
+        var $target = $(this).attr('data-target');
+        var $params = $(this).serialize();
+        // // console.log($params);
+
+        $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: $params,
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status) {
+                        // console.log('success! ');
+                        $('.spinner').hide();
+                        if($target!=undefined) window.location=$target;
+                        else
+                        {
+                            var $displayme = '<div class="alert alert-success">'+response.happy_list+'</div>';
+                            $('#'+$identifier+'-popup-hud').html($displayme);
+                            scroll(0,0);
+                        }
+                    }
+                    else
+                    {
+                        var $errors = response.errors;
+                        console.log($errors);
+                        var $displayme = '';
+                        // // console.log($errors);
+                        for (var key in $errors)
+                        {
+                            console.log($errors[key]);
+                            $displayme = $displayme + '<div class="err">'+$errors[key]+'</div>';
+                        }
+                        //// // console.log($displayme);
+                        $('#'+$identifier+'-popup-hud').html($displayme);
+                        scroll(0,0);
+
+
+                    }
+                },
+              
+                timeout: function(response) {
+                    // console.log(response);
+                },
+                error: function(one,two,three) {
+                    // console.log('object:'+JSON.stringify(one));
+                    // console.log('two: '+two);
+                    // console.log('three: '+three);
+                }
+            });
+            return false;
+    });
+
 	// Entry Add
 
 	if($('.entry-add').length)

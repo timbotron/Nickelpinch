@@ -82,6 +82,7 @@
 
 			{{-- Form submit button. --------------------}}
 			{{ Form::submit('Save Entry',['class'=>'btn btn-primary']) }}
+			<a class="btn btn-default" href="/home">Cancel</a>
 			</fieldset>
 			{{ Form::close() }}
 			

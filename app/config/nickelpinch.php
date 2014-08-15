@@ -74,6 +74,13 @@ return array(
 		30 => 'Savings',
 		40 => 'External Savings',
 		255 => 'Archived'
+		),
+
+	'entry_types' => array(
+		10 => 'Purchase',
+		20 => 'Move',
+		30 => 'CC Payment',
+		40 => 'Bill'
 		)
 
 

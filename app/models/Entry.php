@@ -6,6 +6,8 @@ class Entry extends Eloquent {
 
     protected $primaryKey = "entid";
 
+    public $timestamps = false;
+
     public function section()
     {
     	return $this->hasMany('Entry_section','entid','entid');

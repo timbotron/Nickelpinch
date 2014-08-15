@@ -82,7 +82,7 @@ class InitiumTablum extends Migration {
 	        $table->integer('entid')->unsigned()->index();
 	        $table->integer('ucid')->unsigned()->index();
 	        $table->decimal('amount', 22, 2);
-	        $table->integer('paid_from')->unsigned()->index();
+	        //$table->integer('paid_from')->unsigned()->index();
 
 	        $table->foreign('entid')->references('entid')->on('entries');
 	        $table->foreign('ucid')->references('ucid')->on('user_categories');
