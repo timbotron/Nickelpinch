@@ -73,6 +73,7 @@ class BaseAppController extends Controller {
 				$this->bank_info = array();
 				$this->bank_info['name'] = $cat->category_name;
 				$this->bank_info['balance'] = $cat->balance;
+				$this->bank_info['ucid'] = $cat->ucid;
 			}
 			
 		}

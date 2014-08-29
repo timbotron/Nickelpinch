@@ -31,9 +31,8 @@ class EntryController extends BaseAppController {
 	{
 		$ret = array();
 
-		$ret = array(	0=>'Debit Card',
-						1=>'Cash',
-						2=>'Check');
+		$ret = array(	0=>'Debit Card / Check',
+						1=>'Cash');
 		foreach($this->user->user_categories as $c)
 		{
 			if($c->class==10) $ret[(int)$c->ucid] = $c->category_name;
@@ -181,6 +180,9 @@ class EntryController extends BaseAppController {
 			$e->type = $type;
 			$e->save();
 
+
+			$this->do_the_math($e->paid_to,$e->total_amount,1);
+
 			//Then we update the uc total
 
 
@@ -199,6 +201,10 @@ class EntryController extends BaseAppController {
 						$es->entid = $e->entid;
 						$es->amount = $in['cat_'.$i.'_val'];
 						$es->save();
+
+						// now we do math
+						$this->do_the_math($es->ucid,$es->amount,0);
+
 						
 					}
 				}
@@ -212,11 +218,120 @@ class EntryController extends BaseAppController {
 				$es->amount = $in['amount'];
 				$es->save();
 
+				// now we do math
+				$this->do_the_math($es->ucid,$es->amount,0);
+
 				
 			}
 			
 		}
 		
+	}
+
+	/*
+	USE CASES:
+	!! first need to make sure entry happened in current month.
+	* user buys food, cc, from food uc.
+		* food balance incremented by amt.
+		* if food has savings, subtract from that.
+			* if reserved greater than amt, just subtract.
+			* elif reserved less than amt, set reserved to 0
+		* cc incremented by amt
+	* User goes to costco, spends 100 on debit, 80 food 20 fun.
+		* 100 subtracted from bank balance
+		* 80 added to food balance
+		* if food has savings, subtract from that.
+			* if reserved greater than amt, just subtract.
+			* elif reserved less than amt, set reserved to 0
+		* 20 added to fun balance
+		* if fun has savings, subtract from that.
+			* if reserved greater than amt, just subtract.
+			* elif reserved less than amt, set reserved to 0
+	* User goes to candy store, spends 4 cash from food
+		* 4 added to food balance
+		* if food has savings, subtract from that.
+			* if reserved greater than amt, just subtract.
+			* elif reserved less than amt, set reserved to 0
+
+	*/
+
+	private function do_the_math($ucid,$total,$is_add)
+	{
+		if($ucid>1)
+		{
+			$uc = User_category::find($ucid);
+
+			if($is_add)
+			{
+				switch ($uc->class) 
+				{
+					case 8:
+					case 10:
+						// Is a CC or Bank Account
+						$uc->balance = $uc->balance + $total;
+						break;
+					case 20:
+						// Is a normal acct
+						$uc->saved = $uc->saved + $total;
+						break;
+					case 30:
+					case 40:
+						// Is a savings or external savings
+						$uc->balance = $uc->balance + $total;
+						$uc->saved = $uc->saved + $total;
+						break;
+				}
+				
+			}
+			else
+			{
+				switch ($uc->class) 
+				{
+					case 8:
+					case 10:
+						// Is a CC or Bank Account
+						$uc->balance = $uc->balance - $total;
+						break;
+					case 20:
+						// Is a normal acct
+						if($uc->saved>0)
+						{
+							if($uc->saved>=$total) $uc->saved = $uc->saved - $total;
+							else $uc->saved  = 0.00;
+						}
+						$uc->balance = $uc->balance + $total;
+						break;
+					case 30:
+					case 40:
+						// Is a savings or external savings
+						if($uc->saved>0)
+						{
+							if($uc->saved>=$total) $uc->saved = $uc->saved - $total;
+							else $uc->saved  = 0.00;
+						}
+						break;
+				}
+			}
+			$uc->save();
+		}
+		else
+		{
+			
+			// means someone bought something with debit/cash
+			// Doesn't matter if add or not, same thing happens.
+			if($ucid===0)
+			{
+				// means debit / check, so need to reduce the bank balance
+				$uc = User_category::find($this->bank_info['ucid']);
+				$uc->balance = $uc->balance - $total;
+				$uc->save();
+			}
+			
+		}
+
+		
+		
+
 	}
 
 
