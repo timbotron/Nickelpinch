@@ -7,9 +7,8 @@
 			{{ Form::open($form_data) }}
 			<fieldset>
 			<legend>Add an Entry</legend>
-			@foreach($errors->all() as $message)
-			        <div class="alert alert-warning">{{ $message }}</div>
-			@endforeach
+			
+			<div class="entry-messages"></div>
 
 			<div class="form-group">
 				{{ Form::label('amount', 'Amount') }}
@@ -81,8 +80,11 @@
 			</div>
 
 			{{-- Form submit button. --------------------}}
-			{{ Form::submit('Save Entry',['class'=>'btn btn-primary']) }}
-			<a class="btn btn-default" href="/home">Cancel</a>
+			<div class="entry-status"></div>
+			<div class="btns-to-toggle">
+				{{ Form::submit('Save Entry',['class'=>'btn btn-primary']) }}
+				<a class="btn btn-default" href="/home">Cancel</a>
+			</div>
 			</fieldset>
 			{{ Form::close() }}
 			

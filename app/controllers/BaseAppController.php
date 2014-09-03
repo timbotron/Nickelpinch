@@ -68,6 +68,12 @@ class BaseAppController extends Controller {
 				else $cat->color = $this->green;
 			}
 
+			if($cat->class == 10)
+			{
+				// Is a CC, just need to update remaining_budget
+				$this->remaining_budget += $cat->balance;
+			}
+
 			if($cat->class == 8)
 			{
 				$this->bank_info = array();

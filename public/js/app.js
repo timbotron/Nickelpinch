@@ -6,10 +6,15 @@ $(document).ready(function()
 	$('.ajax-me').submit(function()
     {
         console.log('submitted! ');
+        var $saving = '<div class="alert alert-info" role="alert"><span class="glyphicon glyphicon-cloud-upload"></span> Saving Entry..</div>';
+        var $ok = '<div class="alert alert-success" role="alert"><span class="glyphicon glyphicon-ok"></span> Entry Saved Successfully</div>';
+        $('.btns-to-toggle').hide();
         // // console.log('submitted form');
         var $identifier = $(this).attr('data-id');
         var $target = $(this).attr('data-target');
         var $params = $(this).serialize();
+
+        $('.'+$identifier+'-status').html($saving);
         // // console.log($params);
 
         $.ajax({
@@ -18,43 +23,47 @@ $(document).ready(function()
                 data: $params,
                 dataType: 'json',
                 success: function(response) {
-                    if (response.status) {
-                        // console.log('success! ');
-                        $('.spinner').hide();
-                        if($target!=undefined) window.location=$target;
-                        else
-                        {
-                            var $displayme = '<div class="alert alert-success">'+response.happy_list+'</div>';
-                            $('#'+$identifier+'-popup-hud').html($displayme);
-                            scroll(0,0);
-                        }
-                    }
-                    else
-                    {
-                        var $errors = response.errors;
-                        console.log($errors);
-                        var $displayme = '';
-                        // // console.log($errors);
-                        for (var key in $errors)
-                        {
-                            console.log($errors[key]);
-                            $displayme = $displayme + '<div class="err">'+$errors[key]+'</div>';
-                        }
-                        //// // console.log($displayme);
-                        $('#'+$identifier+'-popup-hud').html($displayme);
-                        scroll(0,0);
-
-
-                    }
+                    
+                     console.log('success! ');
+                     console.log(response);
+                    $('.'+$identifier+'-status').html($ok);
+                    window.location=$target;
+                    
                 },
               
                 timeout: function(response) {
                     // console.log(response);
                 },
-                error: function(one,two,three) {
-                    // console.log('object:'+JSON.stringify(one));
-                    // console.log('two: '+two);
-                    // console.log('three: '+three);
+                error: function(response,two,three) {
+                     //console.log('object:'+JSON.stringify(response));
+                     console.log(response);
+                     //console.log('two: '+two);
+                     //console.log('three: '+three);
+                     var $result = jQuery.parseJSON(response.responseText);
+                     console.log($result);
+                     var $errors = $result.errors;
+                     console.log($errors);
+                     var $displayme = '';
+                     // // console.log($errors);
+                     for (var key in $errors)
+                     {
+                     	if($errors[key]=='total')
+                     	{
+                     		console.log($errors[key]);
+                         $displayme = $displayme + '<div class="alert alert-warning">'+$errors[key]+'</div>';
+                     	}
+                     	else
+                     	{
+                     		console.log($errors[key][0]);
+                         	$displayme = $displayme + '<div class="alert alert-warning">'+$errors[key][0]+'</div>';
+                     	}
+                         
+                     }
+                     //// // console.log($displayme);
+                     $('.'+$identifier+'-messages').html($displayme);
+                     scroll(0,0);
+                     $('.btns-to-toggle').show();
+                     $('.'+$identifier+'-status').html('');
                 }
             });
             return false;

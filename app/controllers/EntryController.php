@@ -74,7 +74,12 @@ class EntryController extends BaseAppController {
 	{
 		
 		View::share('chosen_page','move');
-		$form_data = array('url' => 'api/new_entry','class'=>'form well','autocomplete'=>'off','method'=>'POST');
+		$form_data = array('url' => 'api/new_entry',
+							'class'=>'form well ajax-me',
+							'data-id'=>'entry',
+							'data-target'=>'/home',
+							'autocomplete'=>'off',
+							'method'=>'POST');
 		return View::make('entry.main',['form_data'=>$form_data,
 										'target_cat'=>$target,
 										'the_class'=>'standard',
@@ -181,7 +186,7 @@ class EntryController extends BaseAppController {
 			$e->save();
 
 
-			$this->do_the_math($e->paid_to,$e->total_amount,1);
+			$this->do_the_math($e->paid_to,$e->total_amount,$e->purchase_date,1);
 
 			//Then we update the uc total
 
@@ -203,7 +208,7 @@ class EntryController extends BaseAppController {
 						$es->save();
 
 						// now we do math
-						$this->do_the_math($es->ucid,$es->amount,0);
+						$this->do_the_math($es->ucid,$es->amount,$e->purchase_date,0);
 
 						
 					}
@@ -219,11 +224,11 @@ class EntryController extends BaseAppController {
 				$es->save();
 
 				// now we do math
-				$this->do_the_math($es->ucid,$es->amount,0);
+				$this->do_the_math($es->ucid,$es->amount,$e->purchase_date,0);
 
 				
 			}
-			
+		return true;	
 		}
 		
 	}
@@ -255,7 +260,7 @@ class EntryController extends BaseAppController {
 
 	*/
 
-	private function do_the_math($ucid,$total,$is_add)
+	private function do_the_math($ucid,$total,$date,$is_add)
 	{
 		if($ucid>1)
 		{
@@ -299,7 +304,7 @@ class EntryController extends BaseAppController {
 							if($uc->saved>=$total) $uc->saved = $uc->saved - $total;
 							else $uc->saved  = 0.00;
 						}
-						$uc->balance = $uc->balance + $total;
+						if(date('m-Y') == date('m-Y',strtotime($date))) $uc->balance = $uc->balance + $total;
 						break;
 					case 30:
 					case 40:
@@ -319,7 +324,7 @@ class EntryController extends BaseAppController {
 			
 			// means someone bought something with debit/cash
 			// Doesn't matter if add or not, same thing happens.
-			if($ucid===0)
+			if($ucid==0)
 			{
 				// means debit / check, so need to reduce the bank balance
 				$uc = User_category::find($this->bank_info['ucid']);
