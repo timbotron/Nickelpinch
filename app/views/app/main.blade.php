@@ -69,12 +69,12 @@
 		              		@if(in_array($cat->class,[10]))
 		              		<tr>
 			               	<td>
-			               		<a href="#">{{ $cat->category_name }} {{ $cat->due_date!='' ? '(Due On '.$cat->due_date.'th)' : ''}}</a><br>
+			               		<a href="/paycc/{{ $cat->ucid }}">{{ $cat->category_name }} {{ $cat->due_date!='' ? '(Due On '.$cat->due_date.'th)' : ''}}</a><br>
 			               		<h4><span class="label label-info">{{ $currency.number_format($cat->balance,2,'.','') }} / {{ $currency.number_format($cat->top_limit,2,'.','') }}</span></h4>
 			               		
 			               	</td>
 			               	<td class="vert-align">
-			               		<span class="pull-right"><a class="btn btn-primary"><span class="glyphicon glyphicon-calendar"></span></a></span>
+			               		<span class="pull-right"><a href="/paycc/{{ $cat->ucid }}" class="btn btn-primary"><span class="glyphicon glyphicon-calendar"></span></a></span>
 			               	</td>
 			               </tr>
 		              		@endif

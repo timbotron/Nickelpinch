@@ -29,6 +29,8 @@ Route::group(array('before'=>'auth'), function()
 	//Route::get('add', 'EntryController@create');
 	Route::get('add/{target}', 'EntryController@create');
 	Route::get('save/{target}', 'EntryController@save');
+	Route::get('paycc/{target}', 'EntryController@paycc');
+	Route::get('inout', 'EntryController@inout');
 	Route::post('api/new_entry/{type}', 'EntryController@store');
 });
 

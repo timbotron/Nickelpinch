@@ -14,8 +14,8 @@
             <li {{ $chosen_page=='move' ? 'class="active"' : '' }}>
               <a href="#"><span class="glyphicon glyphicon-random"></span> Move</a>
             </li>
-            <li>
-              <a href="#"><span class="glyphicon glyphicon-sort"></span> Deposit/Withdraw</a>
+            <li {{ $chosen_page=='inout' ? 'class="active"' : '' }}>
+              <a href="/inout"><span class="glyphicon glyphicon-sort"></span> Deposit/Withdraw</a>
             </li>
             <li>
               <a href="#"><span class="glyphicon glyphicon-send"></span> Bill/Check</a>

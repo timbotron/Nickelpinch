@@ -8,9 +8,7 @@ class EntryController extends BaseAppController {
 		parent::__construct();
 		$this->days = $this->make_dates();
 		$this->paid_via = $this->make_paid_via();
-		$this->cats_dd = $this->make_cats_dd();
-		$this->cats_saving_dd = $this->make_cats_saving_dd();
-		//dd($this->cats_dd);
+		$this->all_cats_dd = $this->make_all_cats();
 
 
 	}
@@ -42,31 +40,26 @@ class EntryController extends BaseAppController {
 		return $ret;
 	}
 
-	private function make_cats_dd()
+	private function make_all_cats()
 	{
-		$ret = array();
-		$ret[0] = 'Choose..';
-
-		foreach($this->user->user_categories as $c)
+		$classes = array('all',10,20,30);
+		$returnme = array();
+		foreach($classes as $class)
 		{
-			if($c->class==20) $ret[(int)$c->ucid] = $c->category_name;
+			$ret = array();
+			$ret[0] = 'Choose..';
+			foreach($this->user->user_categories as $c)
+			{
+				if($class=='all' && ($c->class==20 || $c->class==30)) $ret[(int)$c->ucid] = $c->category_name;
+				elseif($c->class==$class) $ret[(int)$c->ucid] = $c->category_name;
+			}
+			$returnme[$class] = $ret;
+			
 		}
 
-		return $ret;
+		return $returnme;
 	}
 
-	private function make_cats_saving_dd()
-	{
-		$ret = array();
-		$ret[0] = 'Choose..';
-
-		foreach($this->user->user_categories as $c)
-		{
-			if($c->class==30) $ret[(int)$c->ucid] = $c->category_name;
-		}
-
-		return $ret;
-	}
 
 	/**
 	 * Display a listing of the resource.
@@ -96,10 +89,9 @@ class EntryController extends BaseAppController {
 							'method'=>'POST');
 		return View::make('entry.main',['form_data'=>$form_data,
 										'target_cat'=>$target,
-										'the_class'=>'standard',
 										'dates'=>$this->days,	
 										'paid_with'=>$this->paid_via,
-										'cats_dd'=>$this->cats_dd
+										'cats_dd'=>$this->all_cats_dd[20]
 										]);
 		
 	}
@@ -121,9 +113,54 @@ class EntryController extends BaseAppController {
 							'method'=>'POST');
 		return View::make('entry.save',['form_data'=>$form_data,
 										'target_cat'=>$target,
-										'the_class'=>'savings',
 										'dates'=>$this->days,	
-										'cats_dd'=>$this->cats_saving_dd
+										'cats_dd'=>$this->all_cats_dd[30]
+										]);
+		
+	}
+
+	/**
+	 * Show the form for withdrawing from a user category or depositing
+	 *
+	 * @return Response
+	 */
+	public function inout()
+	{
+		
+		View::share('chosen_page','none');
+		$form_data = array('url' => 'api/new_entry/70',
+							'class'=>'form well ajax-me',
+							'data-id'=>'entry',
+							'data-target'=>'/home',
+							'autocomplete'=>'off',
+							'method'=>'POST');
+		return View::make('entry.inout',['form_data'=>$form_data,
+										'dates'=>$this->days,	
+										'chosen_page'=>'inout',	
+										'cats_dd'=>$this->all_cats_dd['all']
+										]);
+		
+	}
+
+	/**
+	 * Show the form for Paying a CC Bill
+	 *
+	 * @return Response
+	 */
+	public function paycc($target=0)
+	{
+		
+		View::share('chosen_page','none');
+		$form_data = array('url' => 'api/new_entry/50',
+							'class'=>'form well ajax-me',
+							'data-id'=>'entry',
+							'data-target'=>'/home',
+							'autocomplete'=>'off',
+							'method'=>'POST');
+		return View::make('entry.paycc',['form_data'=>$form_data,
+										'target_cat'=>$target,
+										'dates'=>$this->days,	
+										'cats_dd'=>$this->all_cats_dd[10]
 										]);
 		
 	}
@@ -211,9 +248,78 @@ class EntryController extends BaseAppController {
 		elseif($type==20) // savings entry
 		{
 			$rules = [
-					'amount' 		=> 'required|numeric',
+					'amount' 	=> 'required|numeric',
 					'date'		=> 'required|date',
-					'cat_1' => 'required|numeric'
+					'cat_1' 	=> 'required|numeric'
+				];
+			
+			
+
+			$validator = Validator::make($in,$rules);
+
+			if ($validator->fails())
+			{
+			    return Response::json(array(
+			        'success' => false,
+			        'errors' => $validator->getMessageBag()->toArray()
+
+			    ), 400); // 400 being the HTTP code for an invalid request.
+			}
+			else
+			{
+				if($this->save_entry($in,$type)) return Response::json(array('success' => true), 200);
+				else
+				{
+					 return Response::json(array(
+				        'success' => false,
+				        'errors' => array('saving'=>'There was a problem saving this entry.')
+
+				    ), 400); // 400 being the HTTP code for an invalid request.
+				}
+
+			}
+		}
+		elseif($type==70) // deposit or withdraw entry
+		{
+			$rules = [
+					'the_class'		=> 'required|numeric',
+					'amount' 		=> 'required|numeric',
+					'date'			=> 'required|date',
+					'cat_1' 		=> 'required|numeric'
+				];
+			
+			
+
+			$validator = Validator::make($in,$rules);
+
+			if ($validator->fails())
+			{
+			    return Response::json(array(
+			        'success' => false,
+			        'errors' => $validator->getMessageBag()->toArray()
+
+			    ), 400); // 400 being the HTTP code for an invalid request.
+			}
+			else
+			{
+				if($this->save_entry($in,$type)) return Response::json(array('success' => true), 200);
+				else
+				{
+					 return Response::json(array(
+				        'success' => false,
+				        'errors' => array('saving'=>'There was a problem saving this entry.')
+
+				    ), 400); // 400 being the HTTP code for an invalid request.
+				}
+
+			}
+		}
+		elseif($type==50) // CC Payment
+		{
+			$rules = [
+					'amount' 		=> 'required|numeric',
+					'date'			=> 'required|date',
+					'cat_1' 		=> 'required|numeric'
 				];
 			
 			
@@ -324,6 +430,66 @@ class EntryController extends BaseAppController {
 
 			return true;	
 		}
+		elseif($type==70) // deposit / withdraw
+		{
+			// first we save the entry
+			$e = new Entry;
+			$e->uid = $this->user->uid;
+			if($in['the_class'] == 70) $e->paid_to = $this->bank_info['ucid']; // a deposit
+			else $e->paid_to = 0; // a withdraw
+			$e->purchase_date = $in['date'];
+			$e->total_amount = $in['amount'];
+			$e->description = $in['description'];
+			$e->type = $type;
+			$e->save();
+
+
+			$this->do_the_math($e->paid_to,$e->total_amount,$e->purchase_date,1);
+
+			// if this is a withdraw, we need to reduce the uc it came from so need an entry_section
+			if($e->paid_to==0)
+			{
+				$es = new Entry_section;
+				$es->ucid = $in['cat_1'];
+				$es->entid = $e->entid;
+				$es->amount = $in['amount'];
+				$es->save();
+
+				// now we do math
+				$this->do_the_math($es->ucid,$es->amount,$e->purchase_date,0);
+			}
+
+			
+			return true;	
+		}
+		elseif($type==50) // CC Payment
+		{
+			// first we save the entry
+			$e = new Entry;
+			$e->uid = $this->user->uid;
+			$e->paid_to = 0; 
+			$e->purchase_date = $in['date'];
+			$e->total_amount = $in['amount'];
+			$e->description = $in['description'];
+			$e->type = $type;
+			$e->save();
+
+
+			$this->do_the_math($e->paid_to,$e->total_amount,$e->purchase_date,1);
+
+			// Reduce the CC balance by the amount
+			$es = new Entry_section;
+			$es->ucid = $in['cat_1'];
+			$es->entid = $e->entid;
+			$es->amount = $in['amount'];
+			$es->save();
+			// now we do math
+			$this->do_the_math($es->ucid,$es->amount,$e->purchase_date,0);
+			
+
+			
+			return true;	
+		}
 		
 	}
 
@@ -416,11 +582,11 @@ class EntryController extends BaseAppController {
 		else
 		{
 			
-			// means someone bought something with debit/cash
+			// means someone bought something with debit/cash or a withdraw
 			// Doesn't matter if add or not, same thing happens.
 			if($ucid==0)
 			{
-				// means debit / check, so need to reduce the bank balance
+				// means debit / check / withdraw, so need to reduce the bank balance
 				$uc = User_category::find($this->bank_info['ucid']);
 				$uc->balance = $uc->balance - $total;
 				$uc->save();
