@@ -47,15 +47,16 @@ $(document).ready(function()
                      // // console.log($errors);
                      for (var key in $errors)
                      {
-                     	if($errors[key]=='total')
-                     	{
-                     		console.log($errors[key]);
-                         $displayme = $displayme + '<div class="alert alert-warning">'+$errors[key]+'</div>';
-                     	}
-                     	else
+                     	if($errors[key] instanceof Array)
                      	{
                      		console.log($errors[key][0]);
                          	$displayme = $displayme + '<div class="alert alert-warning">'+$errors[key][0]+'</div>';
+                     		
+                     	}
+                     	else
+                     	{
+                     		console.log($errors[key]);
+                         	$displayme = $displayme + '<div class="alert alert-warning">'+$errors[key]+'</div>';
                      	}
                          
                      }

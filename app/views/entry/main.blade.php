@@ -14,7 +14,7 @@
 				{{ Form::label('amount', 'Amount') }}
 				<div class="input-group">
   					<span class="input-group-addon">{{ $currency }}</span> 
-					{{ Form::input('number','amount',null,array('class'=>'form-control')) }}
+					{{ Form::input('number','amount',null,array('class'=>'form-control','step'=>'any')) }}
 				</div>
 			</div>
 			<div class="form-group">

@@ -73,7 +73,7 @@ class EntryController extends BaseAppController {
 	public function create($target = 0)
 	{
 		
-		View::share('chosen_page','move');
+		View::share('chosen_page','none');
 		$form_data = array('url' => 'api/new_entry',
 							'class'=>'form well ajax-me',
 							'data-id'=>'entry',

@@ -26,8 +26,9 @@ Route::group(array('before'=>'auth'), function()
 	Route::resource('budget', 'BudgetController');
 	Route::get('add_bank', 'BudgetController@add_bank');
 
-	Route::get('add', 'EntryController@create');
+	//Route::get('add', 'EntryController@create');
 	Route::get('add/{target}', 'EntryController@create');
+	Route::get('save/{target}', 'EntryController@save');
 	Route::post('api/new_entry', 'EntryController@store');
 });
 
