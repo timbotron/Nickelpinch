@@ -9,6 +9,7 @@ class EntryController extends BaseAppController {
 		$this->days = $this->make_dates();
 		$this->paid_via = $this->make_paid_via();
 		$this->cats_dd = $this->make_cats_dd();
+		$this->cats_saving_dd = $this->make_cats_saving_dd();
 		//dd($this->cats_dd);
 
 
@@ -54,6 +55,19 @@ class EntryController extends BaseAppController {
 		return $ret;
 	}
 
+	private function make_cats_saving_dd()
+	{
+		$ret = array();
+		$ret[0] = 'Choose..';
+
+		foreach($this->user->user_categories as $c)
+		{
+			if($c->class==30) $ret[(int)$c->ucid] = $c->category_name;
+		}
+
+		return $ret;
+	}
+
 	/**
 	 * Display a listing of the resource.
 	 *
@@ -66,7 +80,7 @@ class EntryController extends BaseAppController {
 
 
 	/**
-	 * Show the form for creating a new resource.
+	 * Show the form for adding an entry
 	 *
 	 * @return Response
 	 */
@@ -74,7 +88,7 @@ class EntryController extends BaseAppController {
 	{
 		
 		View::share('chosen_page','none');
-		$form_data = array('url' => 'api/new_entry',
+		$form_data = array('url' => 'api/new_entry/10',
 							'class'=>'form well ajax-me',
 							'data-id'=>'entry',
 							'data-target'=>'/home',
@@ -90,13 +104,37 @@ class EntryController extends BaseAppController {
 		
 	}
 
+	/**
+	 * Show the form for saving money to a savings category
+	 *
+	 * @return Response
+	 */
+	public function save($target = 0)
+	{
+		
+		View::share('chosen_page','none');
+		$form_data = array('url' => 'api/new_entry/20',
+							'class'=>'form well ajax-me',
+							'data-id'=>'entry',
+							'data-target'=>'/home',
+							'autocomplete'=>'off',
+							'method'=>'POST');
+		return View::make('entry.save',['form_data'=>$form_data,
+										'target_cat'=>$target,
+										'the_class'=>'savings',
+										'dates'=>$this->days,	
+										'cats_dd'=>$this->cats_saving_dd
+										]);
+		
+	}
+
 
 	/**
 	 * Store a newly created resource in storage.
 	 *
 	 * @return Response
 	 */
-	public function store()
+	public function store($type=10)
 	{
 		$in = Input::all();
 		//dd($in);
@@ -104,69 +142,108 @@ class EntryController extends BaseAppController {
 		if(isset($in['using_manual_date'])) $in['date'] = Input::get('date_2');
 		else $in['date'] = Input::get('date_1');
 
-		$rules = [
+		if($type==10)
+		{
+			$rules = [
 					'amount' 		=> 'required|numeric',
 					'paid_to' 		=> 'required|numeric',
 					'date'		=> 'required|date'
 				];
-		// is multi-category purchase?
-		if(Input::has('using_multi_cats'))
-		{
-			// we need to be sure the sum of the cats match the amount
-			$total = 0;
-			if(Input::has('cat_1'))
+			// is multi-category purchase?
+			if(Input::has('using_multi_cats'))
 			{
-				$rules['cat_1'] = 'numeric';
-				$total += $in['cat_1_val'];
-			}
-			if(Input::has('cat_2'))
-			{
-				$rules['cat_2'] = 'numeric';
-				$total += $in['cat_2_val'];
-			}
-			if(Input::has('cat_3'))
-			{
-				$rules['cat_3'] = 'numeric';
-				$total += $in['cat_3_val'];
-			}
+				// we need to be sure the sum of the cats match the amount
+				$total = 0;
+				if(Input::has('cat_1'))
+				{
+					$rules['cat_1'] = 'numeric';
+					$total += $in['cat_1_val'];
+				}
+				if(Input::has('cat_2'))
+				{
+					$rules['cat_2'] = 'numeric';
+					$total += $in['cat_2_val'];
+				}
+				if(Input::has('cat_3'))
+				{
+					$rules['cat_3'] = 'numeric';
+					$total += $in['cat_3_val'];
+				}
 
-			if($total==0)
-			{
-				return Response::json(array('status' => false, 'errors' => array('total'=>'When adding a multi-category purchase, you must have amounts for each category you choose.')), 400);
+				if($total==0)
+				{
+					return Response::json(array('status' => false, 'errors' => array('total'=>'When adding a multi-category purchase, you must have amounts for each category you choose.')), 400);
+				}
+				elseif($total!=$in['amount'])
+				{
+					return Response::json(array('status' => false, 'errors' => array('total'=>'When adding a multi-category purchase, the amounts set in the categories must add up to the total amount of the purchase.')), 400);
+				}
 			}
-			elseif($total!=$in['amount'])
-			{
-				return Response::json(array('status' => false, 'errors' => array('total'=>'When adding a multi-category purchase, the amounts set in the categories must add up to the total amount of the purchase.')), 400);
-			}
-		}
-		else
-		{
-			$rules['cat_1'] = 'required|numeric';
-		}
-
-		$validator = Validator::make($in,$rules);
-
-		if ($validator->fails())
-		{
-		    return Response::json(array(
-		        'success' => false,
-		        'errors' => $validator->getMessageBag()->toArray()
-
-		    ), 400); // 400 being the HTTP code for an invalid request.
-		}
-		else
-		{
-			if($this->save_entry($in,10)) return Response::json(array('success' => true), 200);
 			else
 			{
-				 return Response::json(array(
+				$rules['cat_1'] = 'required|numeric';
+			}
+
+			$validator = Validator::make($in,$rules);
+
+			if ($validator->fails())
+			{
+			    return Response::json(array(
 			        'success' => false,
-			        'errors' => array('saving'=>'There was a problem saving this entry.')
+			        'errors' => $validator->getMessageBag()->toArray()
 
 			    ), 400); // 400 being the HTTP code for an invalid request.
 			}
+			else
+			{
+				if($this->save_entry($in,$type)) return Response::json(array('success' => true), 200);
+				else
+				{
+					 return Response::json(array(
+				        'success' => false,
+				        'errors' => array('saving'=>'There was a problem saving this entry.')
 
+				    ), 400); // 400 being the HTTP code for an invalid request.
+				}
+
+			}
 		}
+		elseif($type==20) // savings entry
+		{
+			$rules = [
+					'amount' 		=> 'required|numeric',
+					'date'		=> 'required|date',
+					'cat_1' => 'required|numeric'
+				];
+			
+			
+
+			$validator = Validator::make($in,$rules);
+
+			if ($validator->fails())
+			{
+			    return Response::json(array(
+			        'success' => false,
+			        'errors' => $validator->getMessageBag()->toArray()
+
+			    ), 400); // 400 being the HTTP code for an invalid request.
+			}
+			else
+			{
+				if($this->save_entry($in,$type)) return Response::json(array('success' => true), 200);
+				else
+				{
+					 return Response::json(array(
+				        'success' => false,
+				        'errors' => array('saving'=>'There was a problem saving this entry.')
+
+				    ), 400); // 400 being the HTTP code for an invalid request.
+				}
+
+			}
+		}
+
+		
 		
 
 	}
@@ -229,6 +306,23 @@ class EntryController extends BaseAppController {
 				
 			}
 		return true;	
+		}
+		elseif($type==20)
+		{
+			// first we save the entry
+			$e = new Entry;
+			$e->uid = $this->user->uid;
+			$e->paid_to = $in['cat_1'];
+			$e->purchase_date = $in['date'];
+			$e->total_amount = $in['amount'];
+			$e->description = $in['description'];
+			$e->type = $type;
+			$e->save();
+
+
+			$this->do_the_math($e->paid_to,$e->total_amount,$e->purchase_date,1);
+
+			return true;	
 		}
 		
 	}
