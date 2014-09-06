@@ -34,7 +34,7 @@ class BaseAppController extends Controller {
 			if($cat->class == 20)
 			{
 				// need to set color of category label depending on how much money is left. 0-70 is green. 71-95 yellow, 95+ red
-				$tmp = ($cat->balance + $cat->saved) / $cat->top_limit;
+				$tmp = $cat->balance / ($cat->top_limit + $cat->saved);
 
 				$this->remaining_budget += $cat->top_limit - $cat->saved - $cat->balance;
 

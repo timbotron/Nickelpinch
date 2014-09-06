@@ -12,13 +12,10 @@
               <a href="/home"><span class="glyphicon glyphicon-home"></span> Overview</a>
             </li>
             <li {{ $chosen_page=='move' ? 'class="active"' : '' }}>
-              <a href="#"><span class="glyphicon glyphicon-random"></span> Move</a>
+              <a href="/move"><span class="glyphicon glyphicon-random"></span> Move</a>
             </li>
             <li {{ $chosen_page=='inout' ? 'class="active"' : '' }}>
               <a href="/inout"><span class="glyphicon glyphicon-sort"></span> Deposit/Withdraw</a>
-            </li>
-            <li>
-              <a href="#"><span class="glyphicon glyphicon-send"></span> Bill/Check</a>
             </li>
             <li {{ $chosen_page=='budget' ? 'class="active"' : '' }}>
               <a href="/budget"><span class="glyphicon glyphicon-list"></span> Budget</a>

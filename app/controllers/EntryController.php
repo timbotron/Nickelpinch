@@ -97,6 +97,29 @@ class EntryController extends BaseAppController {
 	}
 
 	/**
+	 * Show the form for moving
+	 *
+	 * @return Response
+	 */
+	public function move()
+	{
+		
+		View::share('chosen_page','none');
+		$form_data = array('url' => 'api/new_entry/40',
+							'class'=>'form well ajax-me',
+							'data-id'=>'entry',
+							'data-target'=>'/home',
+							'autocomplete'=>'off',
+							'method'=>'POST');
+		return View::make('entry.move',['form_data'=>$form_data,
+										'dates'=>$this->days,	
+										'paid_with'=>$this->all_cats_dd['all'],
+										'cats_dd'=>$this->all_cats_dd['all']
+										]);
+		
+	}
+
+	/**
 	 * Show the form for saving money to a savings category
 	 *
 	 * @return Response
@@ -221,29 +244,6 @@ class EntryController extends BaseAppController {
 				$rules['cat_1'] = 'required|numeric';
 			}
 
-			$validator = Validator::make($in,$rules);
-
-			if ($validator->fails())
-			{
-			    return Response::json(array(
-			        'success' => false,
-			        'errors' => $validator->getMessageBag()->toArray()
-
-			    ), 400); // 400 being the HTTP code for an invalid request.
-			}
-			else
-			{
-				if($this->save_entry($in,$type)) return Response::json(array('success' => true), 200);
-				else
-				{
-					 return Response::json(array(
-				        'success' => false,
-				        'errors' => array('saving'=>'There was a problem saving this entry.')
-
-				    ), 400); // 400 being the HTTP code for an invalid request.
-				}
-
-			}
 		}
 		elseif($type==20) // savings entry
 		{
@@ -253,66 +253,18 @@ class EntryController extends BaseAppController {
 					'cat_1' 	=> 'required|numeric'
 				];
 			
-			
-
-			$validator = Validator::make($in,$rules);
-
-			if ($validator->fails())
-			{
-			    return Response::json(array(
-			        'success' => false,
-			        'errors' => $validator->getMessageBag()->toArray()
-
-			    ), 400); // 400 being the HTTP code for an invalid request.
-			}
-			else
-			{
-				if($this->save_entry($in,$type)) return Response::json(array('success' => true), 200);
-				else
-				{
-					 return Response::json(array(
-				        'success' => false,
-				        'errors' => array('saving'=>'There was a problem saving this entry.')
-
-				    ), 400); // 400 being the HTTP code for an invalid request.
-				}
-
-			}
 		}
 		elseif($type==70) // deposit or withdraw entry
 		{
 			$rules = [
 					'the_class'		=> 'required|numeric',
 					'amount' 		=> 'required|numeric',
-					'date'			=> 'required|date',
-					'cat_1' 		=> 'required|numeric'
+					'date'			=> 'required|date'
 				];
+
+			if($in['cat_1']==80) $rules['cat_1'] = 'required|numeric|min:1';
+			else $rules['cat_1'] = 'required|numeric';
 			
-			
-
-			$validator = Validator::make($in,$rules);
-
-			if ($validator->fails())
-			{
-			    return Response::json(array(
-			        'success' => false,
-			        'errors' => $validator->getMessageBag()->toArray()
-
-			    ), 400); // 400 being the HTTP code for an invalid request.
-			}
-			else
-			{
-				if($this->save_entry($in,$type)) return Response::json(array('success' => true), 200);
-				else
-				{
-					 return Response::json(array(
-				        'success' => false,
-				        'errors' => array('saving'=>'There was a problem saving this entry.')
-
-				    ), 400); // 400 being the HTTP code for an invalid request.
-				}
-
-			}
 		}
 		elseif($type==50) // CC Payment
 		{
@@ -323,29 +275,35 @@ class EntryController extends BaseAppController {
 				];
 			
 			
+		}
+		elseif($type==40)
+		{
+			$rules = [
+					'amount' 		=> 'required|numeric',
+					'paid_to' 		=> 'required|numeric',
+					'date'		=> 'required|date',
+					'cat_1' 		=> 'required|numeric'
+				];
+		}
 
-			$validator = Validator::make($in,$rules);
+		$validator = Validator::make($in,$rules);
 
-			if ($validator->fails())
-			{
-			    return Response::json(array(
-			        'success' => false,
-			        'errors' => $validator->getMessageBag()->toArray()
-
-			    ), 400); // 400 being the HTTP code for an invalid request.
-			}
+		if ($validator->fails())
+		{
+		    return Response::json(array(
+		        'success' => false,
+		        'errors' => $validator->getMessageBag()->toArray()
+		    ), 400); // 400 being the HTTP code for an invalid request.
+		}
+		else
+		{
+			if($this->save_entry($in,$type)) return Response::json(array('success' => true), 200);
 			else
 			{
-				if($this->save_entry($in,$type)) return Response::json(array('success' => true), 200);
-				else
-				{
-					 return Response::json(array(
-				        'success' => false,
-				        'errors' => array('saving'=>'There was a problem saving this entry.')
-
-				    ), 400); // 400 being the HTTP code for an invalid request.
-				}
-
+				 return Response::json(array(
+			        'success' => false,
+			        'errors' => array('saving'=>'There was a problem saving this entry.')
+			    ), 400); // 400 being the HTTP code for an invalid request.
 			}
 		}
 
@@ -490,6 +448,35 @@ class EntryController extends BaseAppController {
 			
 			return true;	
 		}
+		elseif($type==40) // Move
+		{
+			// first we save the entry
+			$e = new Entry;
+			$e->uid = $this->user->uid;
+			$e->paid_to = $in['paid_to']; 
+			$e->purchase_date = $in['date'];
+			$e->total_amount = $in['amount'];
+			$e->description = $in['description'];
+			$e->type = $type;
+			$e->save();
+
+
+
+			$this->do_the_math($e->paid_to,$e->total_amount,$e->purchase_date,1);
+
+			// Reduce the From by the amount
+			$es = new Entry_section;
+			$es->ucid = $in['cat_1'];
+			$es->entid = $e->entid;
+			$es->amount = $in['amount'];
+			$es->save();
+			// now we do math
+			$this->do_the_math($es->ucid,$es->amount,$e->purchase_date,0,1);
+			
+
+			
+			return true;	
+		}
 		
 	}
 
@@ -520,7 +507,7 @@ class EntryController extends BaseAppController {
 
 	*/
 
-	private function do_the_math($ucid,$total,$date,$is_add)
+	private function do_the_math($ucid,$total,$date,$is_add,$is_move=0)
 	{
 		if($ucid>1)
 		{
@@ -564,7 +551,7 @@ class EntryController extends BaseAppController {
 							if($uc->saved>=$total) $uc->saved = $uc->saved - $total;
 							else $uc->saved  = 0.00;
 						}
-						if(date('m-Y') == date('m-Y',strtotime($date))) $uc->balance = $uc->balance + $total;
+						if(!$is_move && (date('m-Y') == date('m-Y',strtotime($date)))) $uc->balance = $uc->balance + $total;
 						break;
 					case 30:
 					case 40:
