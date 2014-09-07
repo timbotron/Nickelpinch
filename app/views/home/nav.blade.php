@@ -20,8 +20,8 @@
             <li {{ $chosen_page=='budget' ? 'class="active"' : '' }}>
               <a href="/budget"><span class="glyphicon glyphicon-list"></span> Budget</a>
             </li>
-            <li>
-              <a href="#"><span class="glyphicon glyphicon-signal"></span> Reports</a>
+            <li {{ $chosen_page=='history' ? 'class="active"' : '' }}>
+              <a href="/history"><span class="glyphicon glyphicon-signal"></span> History</a>
             </li>
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span> Account <b class="caret"></b></a>

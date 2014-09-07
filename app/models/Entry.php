@@ -17,5 +17,21 @@ class Entry extends Eloquent {
     {
     	return $this->belongsTo('User','uid','uid');
     }
+    public static function history_for($ucid, $day_range=30)
+    {
+        $day_range++;
+        $sql = "SELECT entries.entid,
+                        entries.type,
+                        entries.paid_to,
+                        entries.description,
+                        entries.purchase_date,
+                        entries.total_amount,
+                        entry_sections.amount,
+                        entry_sections.ucid
+                FROM entries
+                LEFT JOIN entry_sections ON entries.entid=entry_sections.entid
+                WHERE (entries.paid_to = ? OR entry_sections.ucid = ?) AND purchase_date >= (NOW() - INTERVAL ? DAY) ORDER BY purchase_date DESC";
+        return DB::select($sql,array($ucid,$ucid,$day_range));
+    }
 
 }

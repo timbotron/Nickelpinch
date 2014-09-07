@@ -112,6 +112,54 @@ class BaseAppController extends Controller {
 		}
 	}
 
+	public function make_dates()
+	{
+		$ret = array();
+
+		$ret[date('Y-m-d')] = 'Today '.date('(m/d)');
+		$ret[date('Y-m-d',strtotime('-1 day'))] = 'Yesterday '.date('(m/d)',strtotime('-1 day'));
+		$ret[date('Y-m-d',strtotime('-2 day'))] = date('m/d',strtotime('-2 day'));
+		$ret[date('Y-m-d',strtotime('-3 day'))] = date('m/d',strtotime('-3 day'));
+		$ret[date('Y-m-d',strtotime('-4 day'))] = date('m/d',strtotime('-4 day'));
+
+		return $ret;
+	}
+
+	public function make_paid_via()
+	{
+		$ret = array();
+
+		$ret = array(	0=>'Debit Card / Check',
+						1=>'Cash');
+		foreach($this->user->user_categories as $c)
+		{
+			if($c->class==10) $ret[(int)$c->ucid] = $c->category_name;
+		}
+
+		return $ret;
+	}
+
+	public function make_all_cats()
+	{
+		$classes = array('all_wCC','all',10,20,30);
+		$returnme = array();
+		foreach($classes as $class)
+		{
+			$ret = array();
+			$ret[0] = 'Choose..';
+			foreach($this->user->user_categories as $c)
+			{
+				if($class=='all' && ($c->class==20 || $c->class==30)) $ret[(int)$c->ucid] = $c->category_name;
+				elseif($class=='all_wCC' && (in_array($c->class, array(10,20,30)))) $ret[(int)$c->ucid] = $c->category_name;
+				elseif($c->class==$class) $ret[(int)$c->ucid] = $c->category_name;
+			}
+			$returnme[$class] = $ret;
+			
+		}
+
+		return $returnme;
+	}
+
 	protected function setupLayout()
 	{
 		if ( ! is_null($this->layout))

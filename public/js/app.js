@@ -1,6 +1,16 @@
 $(document).ready(function()
 {
 
+	// Redirect-me
+	$('.redirect-me').submit(function()
+	{
+		// Do redirect
+		var $target = $('#cat_1 option:selected').first().val();
+		window.location = '/history/' + $target;
+		return false;
+	});
+
+
 	// Ajax-me
 
 	$('.ajax-me').submit(function()

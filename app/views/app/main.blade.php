@@ -14,7 +14,7 @@
 	              		@if(in_array($cat->class,[20,30]))
 	              		<tr {{ $cat->class==30 ? 'class="success"' : '' }}>
 		                	<td>
-		                		<a href="/{{ $cat->class==30 ? 'save' : 'add' }}/{{ $cat->ucid }}">{{ $cat->category_name }}</a><br>
+		                		<a href="/history/{{ $cat->ucid }}">{{ $cat->category_name }}</a><br>
 		                		<span class="{{ $cat->color }}">{{ $currency.number_format($cat->balance,2,'.','') }} / {{ $currency.number_format($cat->top_limit,2,'.','') }}</span>
 		                		@if($cat->saved > 0)
 		                		<span class="label label-default"><span class="glyphicon glyphicon-lock"></span> {{ $currency.number_format($cat->saved,2,'.','') }}</span>
@@ -69,7 +69,7 @@
 		              		@if(in_array($cat->class,[10]))
 		              		<tr>
 			               	<td>
-			               		<a href="/paycc/{{ $cat->ucid }}">{{ $cat->category_name }} {{ $cat->due_date!='' ? '(Due On '.$cat->due_date.'th)' : ''}}</a><br>
+			               		<a href="/history/{{ $cat->ucid }}">{{ $cat->category_name }} {{ $cat->due_date!='' ? '(Due On '.$cat->due_date.'th)' : ''}}</a><br>
 			               		<h4><span class="label label-info">{{ $currency.number_format($cat->balance,2,'.','') }} / {{ $currency.number_format($cat->top_limit,2,'.','') }}</span></h4>
 			               		
 			               	</td>

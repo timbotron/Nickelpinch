@@ -6,7 +6,7 @@
 		<div class="col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3">
 			{{ Form::open($form_data) }}
 			<fieldset>
-			<legend>Add an Entry</legend>
+			<legend>Move Money</legend>
 			
 			<div class="entry-messages"></div>
 

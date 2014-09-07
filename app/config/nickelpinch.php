@@ -79,10 +79,10 @@ return array(
 	'entry_types' => array(
 		10 => 'Purchase',
 		20 => 'Savings',
-		30 => 'External Savings',
+		//30 => 'External Savings',
 		40 => 'Move',
 		50 => 'CC Payment',
-		60 => 'Bill',
+		//60 => 'Bill',
 		70 => 'Deposit',
 		80 => 'Withdraw'
 		)

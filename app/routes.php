@@ -33,10 +33,12 @@ Route::group(array('before'=>'auth'), function()
 	Route::get('inout', 'EntryController@inout');
 	Route::get('move', 'EntryController@move');
 	Route::post('api/new_entry/{type}', 'EntryController@store');
+
+	Route::get('/history', 'HistoryController@index');
+	Route::get('/history/{target}', 'HistoryController@index');
 });
 
 
 
 
 
-//Route::get('/reports', 'ReportController@history');
