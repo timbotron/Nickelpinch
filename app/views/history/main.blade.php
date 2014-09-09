@@ -10,9 +10,13 @@
 				{{ Form::label('cat_1', 'Category: ') }}
 				{{ Form::select('cat_1',$cats_dd,$target_cat,array('class'=>'form-control')) }}
 			</div>
+			<div class="form-group">
+				{{ Form::label('date_range', ' Within: ') }}
+				{{ Form::select('date_range',$date_range_dd,$target_range,array('class'=>'form-control')) }}
+			</div>
 
 			
-			<button type="submit" class="btn btn-primary" href="javascript:;">Filter</button>
+			<button type="submit" class="btn btn-primary">Filter</button>
 
 			</fieldset>
 		{{ Form::close() }}
@@ -39,7 +43,15 @@
 
 		</table>
 
-			
+		<script id="entry-template-main" type="text/html">
+			<table class="table">
+				<tr><td>{date}</td><td>{type}</td><td>{description}</td></tr>
+				<tr class="active"><td>{total_amount}</td><td colspan="2">{paid_to}</td></tr>
+			</table>
+		</script>
+		<script id="entry-template-from" type="text/html">
+			<tr><td>{amount}</td><td colspan="2">{ucid}</td></tr>
+		</script>
 		</div>
 	</div>
 	

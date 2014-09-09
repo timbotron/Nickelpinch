@@ -1,12 +1,72 @@
 $(document).ready(function()
 {
 
+	// Display entry details
+
+	$('.get-ent-details').click(function()
+	{
+		var $target = $(this).attr('data-entid');
+
+		// build new tr with info loading display
+		var $loading = '<div class="entry-'+$target+'"><tr><td colspan="4"><div class="alert alert-info" role="alert"><strong>Loading..</strong></div></td></tr></div>';
+		$(this).closest('tr').after($loading);
+		var $main_template = $('#entry-template-main').html();
+		var $from_template = $('#entry-template-from').html();
+		console.log($temp1);
+		// now we need the data
+
+		$.ajax({
+            type: 'POST',
+            url: '/entry/detail/'+$target,
+            data: '',
+            dataType: 'html',
+            success: function(response) {
+                
+                 console.log('success! ');
+                 console.log(response);
+                $('.entry-'+$target).html('data');
+                
+            },
+          
+            timeout: function(response) {
+                // console.log(response);
+            },
+            error: function(response,two,three) {
+                 var $result = jQuery.parseJSON(response.responseText);
+                 var $errors = $result.errors;
+                 var $displayme = '';
+                 for (var key in $errors)
+                 {
+                 	if($errors[key] instanceof Array)
+                 	{
+                 		console.log($errors[key][0]);
+                     	$displayme = $displayme + '<div class="alert alert-warning">'+$errors[key][0]+'</div>';
+                 		
+                 	}
+                 	else
+                 	{
+                 		console.log($errors[key]);
+                     	$displayme = $displayme + '<div class="alert alert-warning">'+$errors[key]+'</div>';
+                 	}
+                     
+                 }
+                 //// // console.log($displayme);
+                 $('.entry-'+$target).html($displayme);
+            }
+        });
+        return false;
+
+
+	});
+
 	// Redirect-me
 	$('.redirect-me').submit(function()
 	{
 		// Do redirect
-		var $target = $('#cat_1 option:selected').first().val();
-		window.location = '/history/' + $target;
+		var $cat = $('#cat_1 option:selected').first().val();
+		var $range = $('#date_range option:selected').first().val();
+		console.log('/history/' + $cat + '/' + $range);
+		window.location = '/history/' + $cat + '/' + $range;
 		return false;
 	});
 
@@ -45,16 +105,9 @@ $(document).ready(function()
                     // console.log(response);
                 },
                 error: function(response,two,three) {
-                     //console.log('object:'+JSON.stringify(response));
-                     console.log(response);
-                     //console.log('two: '+two);
-                     //console.log('three: '+three);
                      var $result = jQuery.parseJSON(response.responseText);
-                     console.log($result);
                      var $errors = $result.errors;
-                     console.log($errors);
                      var $displayme = '';
-                     // // console.log($errors);
                      for (var key in $errors)
                      {
                      	if($errors[key] instanceof Array)

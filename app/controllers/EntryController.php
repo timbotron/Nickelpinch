@@ -550,7 +550,46 @@ class EntryController extends BaseAppController {
 	 */
 	public function show($id)
 	{
-		//
+		$entry = Entry::where('entid','=',$id)->with('section')->get();
+		dd($entry->toJson());
+		/* GAVE
+		[
+		    {
+		        "entid": 21,
+		        "uid": 1,
+		        "paid_to": 7,
+		        "purchase_date": "2014-09-06",
+		        "total_amount": "12.00",
+		        "description": "stuff",
+		        "type": 10,
+		        "section": [
+		            {
+		                "esid": 29,
+		                "entid": 21,
+		                "ucid": 4,
+		                "amount": "10.00",
+		                "paid_from": 0
+		            },
+		            {
+		                "esid": 30,
+		                "entid": 21,
+		                "ucid": 5,
+		                "amount": "2.00",
+		                "paid_from": 0
+		            }
+		        ]
+		    }
+		]
+
+		*/
+
+		// does user have access?
+		if($entry->entid != $this->user->uid)
+		{
+			return Response::json(array('status' => false, 'errors' => array('total'=>'You are not authorized to view this entry.')), 400);
+		}
+
+
 	}
 
 
