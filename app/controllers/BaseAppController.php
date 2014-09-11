@@ -28,9 +28,11 @@ class BaseAppController extends Controller {
 		$this->budget_needs = 0;
 		$this->remaining_budget = 0;
 		$this->in_saved = 0;
+		$this->uc_array = array();
 
 		foreach($this->user->user_categories as &$cat)
 		{
+			$this->uc_array[$cat->ucid] = $cat->category_name;
 			if($cat->class == 20)
 			{
 				// need to set color of category label depending on how much money is left. 0-70 is green. 71-95 yellow, 95+ red

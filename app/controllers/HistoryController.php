@@ -14,7 +14,12 @@ class HistoryController extends BaseAppController {
 	public function index($target=0,$range=30)
 	{
 		View::share('chosen_page','history');
-		$history = Entry::history_for($target,$range);
+		if($target)	$history = Entry::history_for($target,$range);
+		else
+		{
+			$history = false;
+			$target_name = 0;
+		} 
 
 		// we need the current target name
 		//dd($this->user->user_categories);

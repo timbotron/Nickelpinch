@@ -1,30 +1,135 @@
 $(document).ready(function()
 {
 
+	// Delete entry modal
+	$('table').on('click','.ent-delete',function() 
+	{
+		var $target = $(this).data('entid');
+		var $sure = $('#entry-template-delete').html();
+		$sure = $sure.replace(/{entid}/gim,$target);
+		$('.details-for-'+$target).after($sure);
+
+	});
+
+	// cancel delete
+	$('table').on('click','.delete-entry-abort',function() 
+	{
+		var $target = $(this).data('entid');
+		$('.alert-for-delete-'+$target).remove();
+
+	});
+
+	// Actually delete the entry now!
+	$('table').on('click','.delete-entry-confirmed',function() 
+	{
+		var $target = $(this).data('entid');
+		var $deleting = '<div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-trash"></span>Deleting Entry..</div>';
+        $('.alert-for-delete-'+$target).after($deleting);
+        $('.alert-for-delete-'+$target).remove();
+		
+		// Tell that API to delete it!
+		$.ajax({
+            type: 'DELETE',
+            url: '/api/entry_delete/'+$target,  
+            data: '',
+            dataType: 'html',
+            success: function(response) {
+
+                
+                var $data = jQuery.parseJSON(response);
+            	console.log($data[0]);
+
+
+
+                
+            },
+          
+            timeout: function(response) {
+                // console.log(response);
+            },
+            error: function(response,two,three) {
+                 var $result = jQuery.parseJSON(response.responseText);
+                 var $errors = $result.errors;
+                 var $displayme = '';
+                 for (var key in $errors)
+                 {
+                 	if($errors[key] instanceof Array)
+                 	{
+                 		console.log($errors[key][0]);
+                     	$displayme = $displayme + '<div class="alert alert-warning">'+$errors[key][0]+'</div>';
+                 		
+                 	}
+                 	else
+                 	{
+                 		console.log($errors[key]);
+                     	$displayme = $displayme + '<div class="alert alert-warning">'+$errors[key]+'</div>';
+                 	}
+                     
+                 }
+                 //// // console.log($displayme);
+                 $('.entry-'+$target).html($displayme);
+            }
+        });
+
+	});
+
+
+
 	// Display entry details
 
 	$('.get-ent-details').click(function()
 	{
 		var $target = $(this).attr('data-entid');
+		var $button_location = $(this);
+		if($button_location.attr('data-expanded')==1)
+		{
+			$button_location.closest('tr').next().remove();
+			$button_location.attr('data-expanded',0);
+			$button_location.children().first().removeClass('glyphicon-chevron-up').addClass('glyphicon-chevron-down');
+			return false;
+		}
 
 		// build new tr with info loading display
-		var $loading = '<div class="entry-'+$target+'"><tr><td colspan="4"><div class="alert alert-info" role="alert"><strong>Loading..</strong></div></td></tr></div>';
-		$(this).closest('tr').after($loading);
+		var $loading = $('#entry-template-loading').html();
+		$loading = $loading.replace(/{entid}/gim,$target);
+		$button_location.closest('tr').after($loading);
 		var $main_template = $('#entry-template-main').html();
-		var $from_template = $('#entry-template-from').html();
-		console.log($temp1);
+		
 		// now we need the data
 
 		$.ajax({
-            type: 'POST',
-            url: '/entry/detail/'+$target,
+            type: 'GET',
+            url: '/api/entry_detail/'+$target,
             data: '',
             dataType: 'html',
             success: function(response) {
+
                 
-                 console.log('success! ');
-                 console.log(response);
-                $('.entry-'+$target).html('data');
+                 var $data = jQuery.parseJSON(response);
+            	console.log($data[0]);
+                $('.entry-'+$target).remove();
+                $button_location.attr('data-expanded',1);
+                $button_location.children().first().addClass('glyphicon-chevron-up').removeClass('glyphicon-chevron-down');
+                // we need to read template and sub vals
+                //$main_template = $main_template.replace("{entid}",$data[0].entid);
+                $main_template = $main_template.replace(/{entid}/gim, $data[0].entid);
+                $main_template = $main_template.replace(/{purchase_date}/gim,$data[0].purchase_date);
+                $main_template = $main_template.replace(/{type}/gim,$data[0].type);
+                $main_template = $main_template.replace(/{description}/gim,$data[0].description);
+                $main_template = $main_template.replace(/{total_amount}/gim,$data[0].total_amount);
+                $main_template = $main_template.replace(/{paid_to}/gim,$data[0].paid_to);
+                $button_location.closest('tr').after($main_template);
+                for(var $i=0; $i < $data[0].section.length; $i++)
+                {
+                	var $from_template = $('#entry-template-from').html();
+                	$from_template = $from_template.replace(/{amount}/gim,$data[0].section[$i].amount);
+                	$from_template = $from_template.replace(/{ucid}/gim,$data[0].section[$i].ucid);
+                	$('.entid-'+$target).after($from_template);
+                }
+                //$button_location.closest('tr').prev().remove();
+                //$button_location.closest('tr').remove();
+
+
                 
             },
           

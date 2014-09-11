@@ -33,7 +33,8 @@ Route::group(array('before'=>'auth'), function()
 	Route::get('inout', 'EntryController@inout');
 	Route::get('move', 'EntryController@move');
 	Route::post('api/new_entry/{type}', 'EntryController@store');
-	Route::post('api/entry_detail/{id}', 'EntryController@show');
+	Route::get('api/entry_detail/{id}', 'EntryController@show');
+	Route::delete('api/entry_delete/{id}', 'EntryController@destroy');
 
 	Route::get('/history', 'HistoryController@index');
 	Route::get('/history/{target}', 'HistoryController@index');
