@@ -12,7 +12,7 @@
 
 			<div class="form-group">
 				{{ Form::label('the_class', 'Deposit / Withdraw') }}
-				{{ Form::select('the_class',array(70 => 'Deposit',80 => 'Withdraw'),70,array('class'=>'form-control')) }}
+				{{ Form::select('the_class',array(70 => 'Deposit',80 => 'Withdraw'),null,array('class'=>'form-control')) }}
 			</div>
 
 			<div class="form-group">

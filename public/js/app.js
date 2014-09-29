@@ -190,8 +190,8 @@ $(document).ready(function()
         var $params = $(this).serialize();
 
         $('.'+$identifier+'-status').html($saving);
-        // // console.log($params);
-
+        
+         
         $.ajax({
                 type: 'POST',
                 url: $(this).attr('action'),

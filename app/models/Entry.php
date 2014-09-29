@@ -34,4 +34,27 @@ class Entry extends Eloquent {
         return DB::select($sql,array($ucid,$ucid,$day_range));
     }
 
+    public static function delete_entry($entid)
+    {
+        try
+        {
+            DB::transaction(function() use ($entid)
+            {
+                //DB::select('SELECT * from entries where entid=?',array($entid));
+
+                // destroy entry_sections w/this entid
+                DB::table('entry_sections')->where('entid','=',$entid)->delete();
+
+                // destroy entry w/this entid
+                DB::table('entries')->where('entid','=',$entid)->delete();
+
+            });
+        }
+        catch(Exception $e)
+        {
+            return false;
+        }
+        return true;
+    }
+
 }

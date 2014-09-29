@@ -11,10 +11,10 @@ class HistoryController extends BaseAppController {
 		$this->all_cats_dd = $this->make_all_cats();
 	}
 
-	public function index($target=0,$range=30)
+	public function index($target=-1,$range=30)
 	{
 		View::share('chosen_page','history');
-		if($target)	$history = Entry::history_for($target,$range);
+		if($target != -1)	$history = Entry::history_for($target,$range);
 		else
 		{
 			$history = false;
@@ -27,6 +27,9 @@ class HistoryController extends BaseAppController {
 		{
 			if($uc->ucid == $target) $target_name = $uc->category_name;
 		}
+		if($target==0) $target_name = $this->bank_info['name'];
+
+		//dd($this->bank_info);
 		$dates_dd = array(30=>'30 Days',
 							90 => '90 Days',
 							180 => '180 Days',

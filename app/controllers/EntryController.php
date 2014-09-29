@@ -68,8 +68,8 @@ class EntryController extends BaseAppController {
 							'method'=>'POST');
 		return View::make('entry.move',['form_data'=>$form_data,
 										'dates'=>$this->days,	
-										'paid_with'=>$this->all_cats_dd['all'],
-										'cats_dd'=>$this->all_cats_dd['all']
+										'paid_with'=>$this->all_cats_dd['all_wCC'],
+										'cats_dd'=>$this->all_cats_dd['all_wCC']
 										]);
 		
 	}
@@ -115,7 +115,7 @@ class EntryController extends BaseAppController {
 		return View::make('entry.inout',['form_data'=>$form_data,
 										'dates'=>$this->days,	
 										'chosen_page'=>'inout',	
-										'cats_dd'=>$this->all_cats_dd['all']
+										'cats_dd'=>$this->all_cats_dd['all_wCC']
 										]);
 		
 	}
@@ -219,6 +219,8 @@ class EntryController extends BaseAppController {
 
 			if($in['cat_1']==80) $rules['cat_1'] = 'required|numeric|min:1';
 			else $rules['cat_1'] = 'required|numeric';
+
+			$type = $in['the_class'];
 			
 		}
 		elseif($type==50) // CC Payment
@@ -343,7 +345,7 @@ class EntryController extends BaseAppController {
 
 			return true;	
 		}
-		elseif($type==70) // deposit / withdraw
+		elseif($type==70 || $type == 80) // deposit / withdraw
 		{
 			// first we save the entry
 			$e = new Entry;
@@ -462,7 +464,7 @@ class EntryController extends BaseAppController {
 
 	*/
 
-	private function do_the_math($ucid,$total,$date,$is_add,$is_move=0)
+	private function do_the_math($ucid,$total,$date,$is_add,$is_move=0,$is_delete=0)
 	{
 		if($ucid>1)
 		{
@@ -479,12 +481,25 @@ class EntryController extends BaseAppController {
 						break;
 					case 20:
 						// Is a normal acct
-						$uc->saved = $uc->saved + $total;
+						if(!$is_delete) $uc->saved = $uc->saved + $total;
+						else // is delete
+						{
+							// means its in same month; we need to actually reduce the balance
+							if(date('m-Y') == date('m-Y',strtotime($date)))
+							{
+								$uc->balance = $uc->balance - $total;
+							}
+							else
+							{
+								$uc->saved = $uc->saved + $total;
+							}
+						}
+						
 						break;
 					case 30:
 					case 40:
 						// Is a savings or external savings
-						$uc->balance = $uc->balance + $total;
+						if(!$is_move || (($is_move || $is_delete) && (date('m-Y') == date('m-Y',strtotime($date))))) $uc->balance = $uc->balance + $total;
 						$uc->saved = $uc->saved + $total;
 						break;
 				}
@@ -503,8 +518,14 @@ class EntryController extends BaseAppController {
 						// Is a normal acct
 						if($uc->saved>0)
 						{
-							if($uc->saved>=$total) $uc->saved = $uc->saved - $total;
-							else $uc->saved  = 0.00;
+							if($uc->saved>=$total)
+							{
+								$uc->saved = $uc->saved - $total;
+							}
+							else 
+							{
+								$uc->saved  = 0.00;
+							}
 						}
 						if(!$is_move && (date('m-Y') == date('m-Y',strtotime($date)))) $uc->balance = $uc->balance + $total;
 						break;
@@ -513,8 +534,14 @@ class EntryController extends BaseAppController {
 						// Is a savings or external savings
 						if($uc->saved>0)
 						{
-							if($uc->saved>=$total) $uc->saved = $uc->saved - $total;
-							else $uc->saved  = 0.00;
+							if($uc->saved>=$total)
+							{
+								$uc->saved = $uc->saved - $total;
+							}
+							else 
+							{
+								$uc->saved  = 0.00;
+							}
 						}
 						break;
 				}
@@ -563,12 +590,14 @@ class EntryController extends BaseAppController {
 			foreach($entry as &$e)
 			{
 				// gotta make data nicer
-				$e['paid_to'] = $this->uc_array[$e['paid_to']];
+				if($e['paid_to']==0) $e['paid_to'] = 'Debit/Credit';
+				else $e['paid_to'] = $this->uc_array[$e['paid_to']];
 				$e['purchase_date'] = date('M j, Y',strtotime($e['purchase_date']));
 				$e['type'] = $this->nikl_config['entry_types'][$e['type']];
 				foreach($e['section'] as &$s)
 				{
-					$s['ucid'] = $this->uc_array[$s['ucid']];
+					if($s['ucid']==0) $s['ucid'] = 'Debit/Check';
+					else $s['ucid'] = $this->uc_array[$s['ucid']];
 				}
 			}
 			return Response::json($entry);
@@ -612,12 +641,45 @@ class EntryController extends BaseAppController {
 	{
 		$entry = Entry::where('entid','=',$id)->with('section')->get();
 
+		//dd($entry[0]);
+
 		// does user have access?
-		if($entry[0]['uid'] != $this->user->uid)
+		if($entry[0]->uid != $this->user->uid)
 		{
 			return Response::json(array('status' => false, 'errors' => array('total'=>'You are not authorized to delete this entry.')), 400);
 		}
-		elseif($entry->delete()) return Response::json(array('success' => true), 200); // DOESNT WORK BECAUSE ITS A COLLECTION
+
+		//dd($entry[0]);
+
+		if(Entry::delete_entry($id))
+		{
+			// first do reverse math on entry
+			$this->do_the_math(
+								$entry[0]->paid_to,
+								$entry[0]->total_amount,
+								$entry[0]->purchase_date,
+								0,
+								0,
+								1); 
+
+			// Then for each entry section
+			foreach($entry[0]->section as $es)
+			{
+				$this->do_the_math(
+									$es->ucid,
+									$es->amount,
+									$entry[0]->purchase_date,
+									1,
+									0,
+									1); 
+
+			}
+
+
+			// loop through 
+
+			return Response::json(array('success' => true), 200); 
+		}
 		else
 		{
 			return Response::json(array('status' => false, 'errors' => array('total'=>'There was a problem deleting this entry.')), 400);

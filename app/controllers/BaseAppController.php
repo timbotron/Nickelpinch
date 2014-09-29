@@ -148,7 +148,8 @@ class BaseAppController extends Controller {
 		foreach($classes as $class)
 		{
 			$ret = array();
-			$ret[0] = 'Choose..';
+			if($class=='all_wCC') $ret[0] = $this->bank_info['name'];
+			else $ret[0] = 'Choose..';
 			foreach($this->user->user_categories as $c)
 			{
 				if($class=='all' && ($c->class==20 || $c->class==30)) $ret[(int)$c->ucid] = $c->category_name;
