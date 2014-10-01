@@ -24,8 +24,8 @@ $(document).ready(function()
 	{
 		var $target = $(this).data('entid');
 		var $deleting = '<div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-trash"></span>Deleting Entry..</div>';
-        $('.alert-for-delete-'+$target).after($deleting);
-        $('.alert-for-delete-'+$target).remove();
+		var $ok = '<div class="alert alert-success" role="alert"><span class="glyphicon glyphicon-ok"></span> Entry Deleted Successfully</div>';
+        $('.alert-for-delete-'+$target).html($deleting);
 		
 		// Tell that API to delete it!
 		$.ajax({
@@ -35,9 +35,7 @@ $(document).ready(function()
             dataType: 'html',
             success: function(response) {
 
-                
-                var $data = jQuery.parseJSON(response);
-            	console.log($data[0]);
+               $('.alert-for-delete-'+$target).html($ok).delay(1000).parent().hide().parent().hide().prev().hide().prev().hide();
 
 
 
@@ -67,7 +65,7 @@ $(document).ready(function()
                      
                  }
                  //// // console.log($displayme);
-                 $('.entry-'+$target).html($displayme);
+                 $('.alert-for-delete-'+$target).html($displayme);
             }
         });
 
