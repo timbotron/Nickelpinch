@@ -35,7 +35,11 @@ $(document).ready(function()
             dataType: 'html',
             success: function(response) {
 
-               $('.alert-for-delete-'+$target).html($ok).delay(1000).parent().hide().parent().hide().prev().hide().prev().hide();
+               $('.alert-for-delete-'+$target).html($ok);
+               setTimeout(function()
+               {
+               	$('.alert-for-delete-'+$target).parent().fadeOut().parent().fadeOut().prev().fadeOut().prev().fadeOut();
+               },500);
 
 
 
