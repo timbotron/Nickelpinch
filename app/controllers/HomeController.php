@@ -8,7 +8,12 @@ class HomeController extends BaseController {
 		View::share('chosen_page',false);
 	}
 
-	
+	public function logout()
+	{
+		Auth::logout();
+		return Redirect::to('/');
+
+	}
 
 	public function home()
 	{

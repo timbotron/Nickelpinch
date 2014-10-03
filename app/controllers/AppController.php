@@ -17,6 +17,11 @@ class AppController extends BaseAppController {
 		return View::make('app.main');
 	}
 
+	public function settings()
+	{
+		
+	}
+
 	public function welcome()
 	{
 		View::share('chosen_page','home');

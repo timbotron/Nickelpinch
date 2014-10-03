@@ -18,10 +18,12 @@ Route::get('register', 'HomeController@register');
 Route::post('register', 'HomeController@process_register');
 
 Route::group(array('before'=>'auth'), function()
-{
+{	
+	Route::get('logout','HomeController@logout');
 
 	Route::get('home', 'AppController@main');
 	Route::get('welcome', 'AppController@welcome');
+	Route::get('settings','AppController@settings');
 
 	Route::resource('budget', 'BudgetController');
 	Route::get('add_bank', 'BudgetController@add_bank');
