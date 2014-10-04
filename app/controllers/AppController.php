@@ -26,14 +26,20 @@ class AppController extends BaseAppController {
 							'data-target'=>'/home',
 							'autocomplete'=>'off',
 							'method'=>'POST');
-		return View::make('app.settings',['form1_data'=>$form1_data,	
+		$form2_data = array('url' => 'api/cat_reset',
+							'class'=>'form well ajax-me',
+							'data-id'=>'monthly_reset',
+							'data-target'=>'/home',
+							'autocomplete'=>'off',
+							'method'=>'POST');
+		return View::make('app.settings',['form1_data'=>$form1_data,
+										'form2_data'=>$form2_data,	
 										'paid_with'=>$this->make_paid_via()
 										]);
 	}
 
 	public function save_default_pmt()
 	{
-		//dd($this->user);
 		$rules = [
 					'chosen_default_pmt' 		=> 'required'
 		];
@@ -51,6 +57,34 @@ class AppController extends BaseAppController {
 		else
 		{
 			return Response::json(array('status' => false, 'errors' => array('total'=>'There was a problem saving this change.')), 400);
+		}
+	}
+
+	public function cat_reset()
+	{
+		// This is a big one. Reset all the categories balances to 0, and add any diff between
+		// balance and limit into savings.
+
+		//dd($this->user->user_categories);
+
+		foreach($this->user->user_categories as $uc)
+		{
+			// can't be archived, bank, external savings or savings
+			if($uc->class == 20)
+			{
+				// if there is some room in this categories budget, put it in savings for next month
+				if($uc->balance < $uc->top_limit)
+				{
+					$uc->saved = $uc->top_limit -  $uc->balance;
+				}
+				
+				// set balance to 0 and save uc
+				$uc->balance = 0.00;
+				//$uc->save();
+				
+			}
+
+
 		}
 	}
 

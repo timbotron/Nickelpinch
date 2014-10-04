@@ -17,15 +17,15 @@
             <li {{ $chosen_page=='inout' ? 'class="active"' : '' }}>
               <a href="/inout"><span class="glyphicon glyphicon-sort"></span> Deposit/Withdraw</a>
             </li>
-            <li {{ $chosen_page=='budget' ? 'class="active"' : '' }}>
-              <a href="/budget"><span class="glyphicon glyphicon-list"></span> Budget</a>
-            </li>
-            <li {{ $chosen_page=='history' ? 'class="active"' : '' }}>
-              <a href="/history"><span class="glyphicon glyphicon-signal"></span> History</a>
-            </li>
             <li class="dropdown {{ $chosen_page=='settings' ? 'active' : '' }}">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span> Account <b class="caret"></b></a>
               <ul class="dropdown-menu">
+                 <li {{ $chosen_page=='budget' ? 'class="active"' : '' }}>
+                  <a href="/budget"><span class="glyphicon glyphicon-list"></span> Budget</a>
+                </li>
+                <li {{ $chosen_page=='history' ? 'class="active"' : '' }}>
+                  <a href="/history"><span class="glyphicon glyphicon-signal"></span> History</a>
+                </li>
                 <li>
                   <a href="/settings"><span class="glyphicon glyphicon-cog"></span> Settings</a>
                 </li>
