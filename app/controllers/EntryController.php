@@ -419,7 +419,7 @@ class EntryController extends BaseAppController {
 
 
 
-			$this->do_the_math($e->paid_to,$e->total_amount,$e->purchase_date,1);
+			$this->do_the_math($e->paid_to,$e->total_amount,$e->purchase_date,1,1);
 
 			// Reduce the From by the amount
 			$es = new Entry_section;
@@ -555,10 +555,21 @@ class EntryController extends BaseAppController {
 			// Doesn't matter if add or not, same thing happens.
 			if($ucid==0)
 			{
-				// means debit / check / withdraw, so need to reduce the bank balance
 				$uc = User_category::find($this->bank_info['ucid']);
-				$uc->balance = $uc->balance - $total;
-				$uc->save();
+
+				if($is_add && $is_move)
+				{
+					$uc->balance = $uc->balance + $total;
+					$uc->save();
+				}
+				else
+				{
+					// means debit / check / withdraw, so need to reduce the bank balance
+					
+					$uc->balance = $uc->balance - $total;
+					$uc->save();
+				}
+				
 			}
 			
 		}
