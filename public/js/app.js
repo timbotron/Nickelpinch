@@ -182,8 +182,8 @@ $(document).ready(function()
 
 	$('.ajax-me').submit(function()
     {
-        var $saving = '<div class="alert alert-info" role="alert"><span class="glyphicon glyphicon-cloud-upload"></span> Saving Entry..</div>';
-        var $ok = '<div class="alert alert-success" role="alert"><span class="glyphicon glyphicon-ok"></span> Entry Saved Successfully</div>';
+        var $saving = '<div class="alert alert-info" role="alert"><span class="glyphicon glyphicon-cloud-upload"></span> Processing..</div>';
+        var $ok = '<div class="alert alert-success" role="alert"><span class="glyphicon glyphicon-ok"></span> Process Successful.</div>';
         $('.btns-to-toggle').hide();
         // // console.log('submitted form');
         var $identifier = $(this).attr('data-id');

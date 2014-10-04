@@ -65,27 +65,48 @@ class AppController extends BaseAppController {
 		// This is a big one. Reset all the categories balances to 0, and add any diff between
 		// balance and limit into savings.
 
-		//dd($this->user->user_categories);
-
-		foreach($this->user->user_categories as $uc)
-		{
-			// can't be archived, bank, external savings or savings
-			if($uc->class == 20)
-			{
-				// if there is some room in this categories budget, put it in savings for next month
-				if($uc->balance < $uc->top_limit)
+		try
+        {
+            DB::transaction(function()
+            {
+                foreach($this->user->user_categories as $uc)
 				{
-					$uc->saved = $uc->top_limit -  $uc->balance;
+					$tmp = array();
+					// can't be archived, bank, external savings or savings
+					if($uc->class == 20)
+					{
+						// if there is some room in this categories budget, put it in savings for next month
+						if($uc->balance < $uc->top_limit)
+						{
+							$tmp['saved'] = $uc->saved + ($uc->top_limit -  $uc->balance);
+						}
+						
+						// set balance to 0 and save uc
+						$tmp['balance'] = 0.00;
+						DB::table('user_categories')->where('ucid',$uc->ucid)->update($tmp);
+					}
+					elseif($uc->class == 30)
+					{
+						// is savings
+
+						// set balance to 0 and save uc
+						$tmp['balance'] = 0.00;
+						DB::table('user_categories')->where('ucid',$uc->ucid)->update($tmp);
+					}
+
+
 				}
-				
-				// set balance to 0 and save uc
-				$uc->balance = 0.00;
-				//$uc->save();
-				
-			}
 
+            });
+        }
+        catch(Exception $e)
+        {
+        	//dd($e->getMessage());
+            return Response::json(array('status' => false, 'errors' => array('total'=>'There was a problem with the categories reset.')), 400);
+        }
+        return Response::json(array('success' => true), 200);
 
-		}
+		
 	}
 
 	public function welcome()
