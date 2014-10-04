@@ -2,6 +2,10 @@
 
 return array(
 
+	// Needed when upgraded to laravel 4.2.*
+
+	'cipher' => MCRYPT_RIJNDAEL_256,
+
 	/*
 	|--------------------------------------------------------------------------
 	| Application Debug Mode
