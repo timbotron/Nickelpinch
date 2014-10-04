@@ -182,7 +182,6 @@ $(document).ready(function()
 
 	$('.ajax-me').submit(function()
     {
-        console.log('submitted! ');
         var $saving = '<div class="alert alert-info" role="alert"><span class="glyphicon glyphicon-cloud-upload"></span> Saving Entry..</div>';
         var $ok = '<div class="alert alert-success" role="alert"><span class="glyphicon glyphicon-ok"></span> Entry Saved Successfully</div>';
         $('.btns-to-toggle').hide();

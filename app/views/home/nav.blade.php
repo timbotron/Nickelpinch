@@ -23,7 +23,7 @@
             <li {{ $chosen_page=='history' ? 'class="active"' : '' }}>
               <a href="/history"><span class="glyphicon glyphicon-signal"></span> History</a>
             </li>
-            <li class="dropdown">
+            <li class="dropdown {{ $chosen_page=='settings' ? 'active' : '' }}">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span> Account <b class="caret"></b></a>
               <ul class="dropdown-menu">
                 <li>
