@@ -16,9 +16,11 @@
 			<label class="checkbox-inline filter-budget">
   				<input type="checkbox"  value="c30"> <span class="label label-success">Savings</span>
 			</label>
+			<!--
 			<label class="checkbox-inline filter-budget">
   				<input type="checkbox"  value="c40"> <span class="label label-success">External Savings</span>
 			</label>
+			-->
 			<label class="checkbox-inline filter-budget">
   				<input type="checkbox"  value="c255"> <span class="label label-default">Archived</span>
 			</label>
@@ -63,7 +65,7 @@
 							<a href="/budget/{{ $cat->ucid }}/edit" class="btn btn-warning btn-sm">
 								<span class="glyphicon glyphicon-pencil"></span>
 							</a>
-							<a href="/report/{{ $cat->ucid }}" class="btn btn-default btn-sm">
+							<a href="/history/{{ $cat->ucid }}" class="btn btn-default btn-sm">
 								<span class="glyphicon glyphicon-stats"></span>
 							</a>
 

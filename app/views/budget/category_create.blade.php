@@ -5,7 +5,7 @@
 			<button type="button" class="btn btn-primary btn-sm cat-btn" disabled="disabled">Category</button>
 			<button type="button" class="btn btn-default btn-sm cc-btn">Credit Card</button>
 			<button type="button" class="btn btn-default btn-sm sav-btn">Savings</button>
-			<button type="button" class="btn btn-default btn-sm exsav-btn">External Savings</button>
+			<!-- <button type="button" class="btn btn-default btn-sm exsav-btn">External Savings</button> -->
 		</div>
 	</div>
 </div>

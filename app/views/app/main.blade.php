@@ -83,32 +83,7 @@
 	                </tbody>
 	            </table>
 	        </div>
-			<div class="panel panel-default">
-	            <div class="panel-heading">
-	            	<h3 class="panel-title">External Accounts</h3>
-	            </div>
-	            <table class="table table-condensed">
-	              	<tbody>
-	              		@foreach($user_data->user_categories as $cat)
-		              		@if(in_array($cat->class,[40]))
-		              		<tr class="success">
-			               	<td>
-			               		<a href="#">{{ $cat->category_name }}</a><br>
-			               		<span class="{{ $cat->color }}">{{ $currency.number_format($cat->balance,2,'.','') }} / {{ $currency.number_format($cat->top_limit,2,'.','') }}</span>
-			               		@if($cat->saved > 0)
-			               		<span class="label label-default"><span class="glyphicon glyphicon-lock"></span> {{ $currency.number_format($cat->saved,2,'.','') }}</span>
-			               		@endif
-			               	</td>
-			               	<td class="vert-align">
-			               		<span class="pull-right"><a class="btn btn-primary"><span class="glyphicon glyphicon-leaf"></span></a></span>
-			               	</td>
-			               </tr>
-		              		@endif
-		              	@endforeach
-	                	
-	                </tbody>
-	            </table>
-	        </div>
+			
 		</div>
 		
 
