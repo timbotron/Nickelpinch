@@ -283,6 +283,9 @@ class EntryController extends BaseAppController {
 			$e->type = $type;
 			$e->save();
 
+			// now we add that amt to the paid_to
+
+
 
 			$this->do_the_math($e->paid_to,$e->total_amount,$e->purchase_date,1);
 
@@ -315,20 +318,22 @@ class EntryController extends BaseAppController {
 			else
 			{
 				// single
+				/*
 				$es = new Entry_section;
 				$es->ucid = $in['cat_1'];
 				$es->entid = $e->entid;
 				$es->amount = $in['amount'];
-				$es->save();
+				$es->save();*/
 
 				// now we do math
-				$this->do_the_math($es->ucid,$es->amount,$e->purchase_date,0);
+				//$this->do_the_math($es->ucid,$es->amount,$e->purchase_date,0);
+				$this->do_the_math($e->entid,$in['cat_1'],$in['amount'],$e->purchase_date,0);
 
 				
 			}
 		return true;	
 		}
-		elseif($type==20)
+		elseif($type==20) // to savings
 		{
 			// first we save the entry
 			$e = new Entry;
@@ -464,7 +469,18 @@ class EntryController extends BaseAppController {
 
 	*/
 
-	private function do_the_math($ucid,$total,$date,$is_add,$is_move=0,$is_delete=0)
+	private function save_entry_section($ucid,$entid,$paid_from,$amount)
+	{
+
+		$es = new Entry_section;
+		$es->ucid = $ucid;
+		$es->entid = $entid;
+		$es->paid_from = $paid_from;
+		$es->amount = $amount;
+		$es->save();
+	}
+
+	private function do_the_math($entid,$ucid,$total,$date,$is_add,$is_move=0,$is_delete=0,$paid_from=0)
 	{
 		if($ucid>1)
 		{
@@ -516,18 +532,38 @@ class EntryController extends BaseAppController {
 						break;
 					case 20:
 						// Is a normal acct
+						$diff = 0.00;
 						if($uc->saved>0)
 						{
 							if($uc->saved>=$total)
 							{
-								$uc->saved = $uc->saved - $total;
+								$uc->saved = $uc->saved - $total;								
+								$this->save_entry_section($ucid,$entid,1,$total);
 							}
-							else 
+							else
 							{
-								$uc->saved  = 0.00;
+								// means this is a two entry section one, some out of savings, rest out of balance
+								$this->save_entry_section($ucid,$entid,1,$uc->saved);
+								$diff = $total - $uc->saved;
+								$uc->saved = 0.00; // we used all of it
+								$this->save_entry_section($ucid,$entid,2,$diff);
+							}
+							
+						}
+						else $this->save_entry_section($ucid,$entid,1,$total);
+						
+						if((date('m-Y') == date('m-Y',strtotime($date))))
+						{
+							if($diff) // if this was split
+							{
+								$uc->balance = $uc->balance + $diff;
+							}
+							else
+							{
+								$uc->balance = $uc->balance + $total;
 							}
 						}
-						if(!$is_move && (date('m-Y') == date('m-Y',strtotime($date)))) $uc->balance = $uc->balance + $total;
+						
 						break;
 					case 30:
 					case 40:
@@ -666,6 +702,7 @@ class EntryController extends BaseAppController {
 		{
 			// first do reverse math on entry
 			$this->do_the_math(
+								$id,
 								$entry[0]->paid_to,
 								$entry[0]->total_amount,
 								$entry[0]->purchase_date,
@@ -677,12 +714,14 @@ class EntryController extends BaseAppController {
 			foreach($entry[0]->section as $es)
 			{
 				$this->do_the_math(
+									$id,
 									$es->ucid,
 									$es->amount,
 									$entry[0]->purchase_date,
 									1,
 									0,
-									1); 
+									1,
+									$es->paid_from); 
 
 			}
 
