@@ -12,13 +12,13 @@
 
 				<div class="form-group">
 					{{ Form::label('category_name', 'Bank Account Name'); }}
-					{{ Form::text('category_name',null,array('class'=>'form-control','placeholder'=>'Enter Bank Account Name')) }}
+					{{ Form::text('category_name',null,array('class'=>'form-control','placeholder'=>'Enter Bank Account Name','step'=>'any','min'=>'0')) }}
 				</div>
 				<div class="form-group">
 					{{ Form::label('balance', 'Current Balance'); }}
 					<div class="input-group">
   						<span class="input-group-addon">{{ $currency }}</span> 
-						{{ Form::input('number','balance',null,array('class'=>'form-control')) }}
+						{{ Form::input('number','balance',null,array('class'=>'form-control','step'=>'any','min'=>'0')) }}
 					</div>
 				</div>
 				

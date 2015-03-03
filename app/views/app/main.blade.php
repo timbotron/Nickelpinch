@@ -48,6 +48,12 @@
 				      		<th>Remaining Budget:</th>
 				      		<td><span class="pull-right">-{{ $currency.number_format($bank_info['remaining_budget'],2,'.','') }}</span></td>
 				    	</tr>
+				    	@if($bank_info['in_cc_queue'] > 0)
+				    	<tr>
+				      		<th>For CC Payment(s):</th>
+				      		<td><span class="pull-right">-{{ $currency.number_format($bank_info['in_cc_queue'],2,'.','') }}</span></td>
+				    	</tr>
+				    	@endif
 				    	<tr>
 				      		<th>Saved:</th>
 				      		<td><span class="pull-right">-{{ $currency.number_format($bank_info['in_saved'],2,'.','') }}</span></td>

@@ -60,7 +60,7 @@ class BudgetController extends \BaseAppController {
 			$uc->save();
 
 			// Hash::make($password);
-			if(Input::get('class')=='bank_account') return Redirect::to('/add_bank');
+			if(Input::get('class')=='bank_account') return Redirect::to('/home');
 			else return Redirect::to('/budget');
 		}
 		else

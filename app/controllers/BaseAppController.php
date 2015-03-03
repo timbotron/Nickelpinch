@@ -28,6 +28,7 @@ class BaseAppController extends Controller {
 		$this->budget_needs = 0;
 		$this->remaining_budget = 0;
 		$this->in_saved = 0;
+		$this->in_cc_queue = 0;
 		$this->uc_array = array();
 
 		foreach($this->user->user_categories as &$cat)
@@ -78,7 +79,7 @@ class BaseAppController extends Controller {
 			if($cat->class == 10)
 			{
 				// Is a CC, just need to update remaining_budget
-				$this->remaining_budget += $cat->balance;
+				$this->in_cc_queue += $cat->balance;
 			}
 
 			if($cat->class == 8)
@@ -95,8 +96,9 @@ class BaseAppController extends Controller {
 		{
 			$this->bank_info['remaining_budget'] = $this->remaining_budget;
 			$this->bank_info['in_saved'] = $this->in_saved;
+			$this->bank_info['in_cc_queue'] = $this->in_cc_queue;
 			$tmp = 0;
-			$tmp = $this->bank_info['balance'] - $this->remaining_budget - $this->in_saved;
+			$tmp = $this->bank_info['balance'] - $this->remaining_budget - $this->in_saved - $this->in_cc_queue;
 
 			$this->bank_info['remaining'] = $tmp;
 		}

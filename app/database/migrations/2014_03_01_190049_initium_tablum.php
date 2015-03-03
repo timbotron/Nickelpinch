@@ -104,7 +104,6 @@ class InitiumTablum extends Migration {
 		Schema::drop('entry_sections');
 		Schema::drop('entries');
 		Schema::drop('user_categories');
-		Schema::drop('stores');
 		Schema::drop('users');
 	}
 

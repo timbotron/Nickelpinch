@@ -285,9 +285,9 @@ class EntryController extends BaseAppController {
 
 			// now we add that amt to the paid_to
 
+			// $entid,$ucid,$total,$date,$is_add,
 
-
-			$this->do_the_math($e->paid_to,$e->total_amount,$e->purchase_date,1);
+			$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,1);
 
 			//Then we update the uc total
 
@@ -302,14 +302,14 @@ class EntryController extends BaseAppController {
 					if($in['cat_'.$i]!='0')
 					{
 
-						$es = new Entry_section;
+						/*$es = new Entry_section;
 						$es->ucid = $in['cat_'.$i];
 						$es->entid = $e->entid;
 						$es->amount = $in['cat_'.$i.'_val'];
-						$es->save();
+						$es->save();*/
 
 						// now we do math
-						$this->do_the_math($es->ucid,$es->amount,$e->purchase_date,0);
+						$this->do_the_math($e->entid,$in['cat_'.$i],$in['cat_'.$i.'_val'],$e->purchase_date,0);
 
 						
 					}
@@ -345,8 +345,10 @@ class EntryController extends BaseAppController {
 			$e->type = $type;
 			$e->save();
 
+			// $entid,$ucid,$total,$date,$is_add,
 
-			$this->do_the_math($e->paid_to,$e->total_amount,$e->purchase_date,1);
+
+			$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,1);
 
 			return true;	
 		}
@@ -364,7 +366,7 @@ class EntryController extends BaseAppController {
 			$e->save();
 
 
-			$this->do_the_math($e->paid_to,$e->total_amount,$e->purchase_date,1);
+			$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,1);
 
 			// if this is a withdraw, we need to reduce the uc it came from so need an entry_section
 			if($e->paid_to==0)
@@ -376,7 +378,7 @@ class EntryController extends BaseAppController {
 				$es->save();
 
 				// now we do math
-				$this->do_the_math($es->ucid,$es->amount,$e->purchase_date,0);
+				$this->do_the_math($e->entid,$es->ucid,$es->amount,$e->purchase_date,0);
 			}
 
 			
@@ -395,7 +397,7 @@ class EntryController extends BaseAppController {
 			$e->save();
 
 
-			$this->do_the_math($e->paid_to,$e->total_amount,$e->purchase_date,1);
+			$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,1);
 
 			// Reduce the CC balance by the amount
 			$es = new Entry_section;
@@ -404,7 +406,7 @@ class EntryController extends BaseAppController {
 			$es->amount = $in['amount'];
 			$es->save();
 			// now we do math
-			$this->do_the_math($es->ucid,$es->amount,$e->purchase_date,0);
+			$this->do_the_math($e->entid,$es->ucid,$es->amount,$e->purchase_date,0);
 			
 
 			
@@ -424,7 +426,7 @@ class EntryController extends BaseAppController {
 
 
 
-			$this->do_the_math($e->paid_to,$e->total_amount,$e->purchase_date,1,1);
+			$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,1,1);
 
 			// Reduce the From by the amount
 			$es = new Entry_section;
@@ -433,7 +435,7 @@ class EntryController extends BaseAppController {
 			$es->amount = $in['amount'];
 			$es->save();
 			// now we do math
-			$this->do_the_math($es->ucid,$es->amount,$e->purchase_date,0,1);
+			$this->do_the_math($e->entid,$es->ucid,$es->amount,$e->purchase_date,0,1);
 			
 
 			
@@ -551,7 +553,7 @@ class EntryController extends BaseAppController {
 							
 						}
 						else $this->save_entry_section($ucid,$entid,1,$total);
-						
+
 						if((date('m-Y') == date('m-Y',strtotime($date))))
 						{
 							if($diff) // if this was split
