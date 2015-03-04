@@ -124,8 +124,14 @@ $(document).ready(function()
                 for(var $i=0; $i < $data[0].section.length; $i++)
                 {
                 	var $from_template = $('#entry-template-from').html();
+                	var $paid_from = '';
                 	$from_template = $from_template.replace(/{amount}/gim,$data[0].section[$i].amount);
                 	$from_template = $from_template.replace(/{ucid}/gim,$data[0].section[$i].ucid);
+                	if($data[0].section[$i].paid_from > 1)
+                	{
+                		$paid_from = '(Savings)';
+                	}
+                	$from_template = $from_template.replace(/{paid_from}/gim,$paid_from);
                 	$('.entid-'+$target).after($from_template);
                 }
                 //$button_location.closest('tr').prev().remove();

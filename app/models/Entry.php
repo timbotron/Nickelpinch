@@ -30,7 +30,7 @@ class Entry extends Eloquent {
                         entry_sections.ucid
                 FROM entries
                 LEFT JOIN entry_sections ON entries.entid=entry_sections.entid
-                WHERE (entries.paid_to = ? OR entry_sections.ucid = ?) AND purchase_date >= (NOW() - INTERVAL ? DAY) ORDER BY purchase_date DESC";
+                WHERE (entries.paid_to = ? OR entry_sections.ucid = ?) AND purchase_date >= (NOW() - INTERVAL ? DAY) GROUP BY entries.entid ORDER BY purchase_date DESC";
         return DB::select($sql,array($ucid,$ucid,$day_range));
     }
 
