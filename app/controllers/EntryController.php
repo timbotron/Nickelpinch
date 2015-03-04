@@ -348,11 +348,17 @@ class EntryController extends BaseAppController {
 			$e->type = $type;
 			$e->save();
 
+			$dep_or_with = 0;
+			if($in['the_class'] == 70)
+			{
+				$dep_or_with = 1;
+			}
 
-			$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,1);
+
+			$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,$dep_or_with);
 
 			// if this is a withdraw, we need to reduce the uc it came from so need an entry_section
-			if($e->paid_to==0)
+			if($e->paid_to==0 && ($this->bank_info['ucid'] != $in['cat_1']))
 			{
 				$es = new Entry_section;
 				$es->ucid = $in['cat_1'];
