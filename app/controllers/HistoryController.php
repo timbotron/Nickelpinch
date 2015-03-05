@@ -20,7 +20,6 @@ class HistoryController extends BaseAppController {
 			$history = false;
 			$target_name = 0;
 		} 
-
 		// we need the current target name
 		//dd($this->user->user_categories);
 		foreach($this->user->user_categories as $uc)
@@ -45,7 +44,7 @@ class HistoryController extends BaseAppController {
 										'history'=>$history,
 										'dates'=>$this->days,	
 										'paid_with'=>$this->paid_via,
-										'cats_dd'=>$this->all_cats_dd['all_wCC'],
+										'cats_dd'=>$this->all_cats_dd['history'],
 										'date_range_dd'=>$dates_dd
 										]);
 	}

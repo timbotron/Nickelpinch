@@ -150,17 +150,22 @@ class BaseAppController extends Controller {
 
 	public function make_all_cats()
 	{
-		$classes = array('all_wCC','all',10,20,30);
+		$classes = array('history','all_wCC','all',10,20,30);
 		$returnme = array();
 		foreach($classes as $class)
 		{
 			$ret = array();
 			if($class=='all_wCC') $ret[0] = $this->bank_info['name'];
+			elseif($class=='history')
+			{
+				$ret['type:70'] = 'Deposits';
+				$ret['type:80'] = 'Withdraws';
+			}
 			else $ret[0] = 'Choose..';
 			foreach($this->user->user_categories as $c)
 			{
 				if($class=='all' && ($c->class==20 || $c->class==30)) $ret[(int)$c->ucid] = $c->category_name;
-				elseif($class=='all_wCC' && (in_array($c->class, array(10,20,30)))) $ret[(int)$c->ucid] = $c->category_name;
+				elseif(in_array($class,array('all_wCC','history')) && (in_array($c->class, array(10,20,30)))) $ret[(int)$c->ucid] = $c->category_name;
 				elseif($c->class==$class) $ret[(int)$c->ucid] = $c->category_name;
 			}
 			$returnme[$class] = $ret;
