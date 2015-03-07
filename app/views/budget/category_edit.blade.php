@@ -1,6 +1,7 @@
 
 <div class="row">
 	<div class="col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3">
+	
 		{{ Form::open($form_data) }}
 			<fieldset>
 			<legend>Edit {{ $nikl_config['uc_class_def'][$uc->class]}} Category</legend>
@@ -36,9 +37,6 @@
 				</div>
 				</div>
 				@endif
-				
-
-			   
 
 			    {{-- Form submit button. --------------------}}
 			    {{ Form::submit('Edit Category',['class'=>'btn btn-primary']) }}
@@ -46,6 +44,23 @@
 
 			</fieldset>
 
+		{{ Form::close() }}
+		<div class="clearme"></div>
+		@if($uc->class==30)
+			{{ Form::open(['url' => 'budget/convert_savings','class'=>'form well','autocomplete'=>'off','method'=>'POST']) }}
+			<fieldset>
+				<legend>Convert {{ $nikl_config['uc_class_def'][$uc->class]}} Category</legend>
+				<div class="alert alert-info">
+					If this savings category is ready to be spent from, convert it here!
+				</div>
+				{{ Form::hidden('ucid',$uc->ucid) }}
+
+				{{-- Form submit button. --------------------}}
+				{{ Form::submit('Convert Category',['class'=>'btn btn-primary']) }}
+				<a href="/budget" class="btn btn-default">Cancel</a>
+
+			</fieldset>
 			{{ Form::close() }}
+		@endif
 	</div>
 </div>

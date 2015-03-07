@@ -127,7 +127,7 @@ $(document).ready(function()
                 	var $paid_from = '';
                 	$from_template = $from_template.replace(/{amount}/gim,$data[0].section[$i].amount);
                 	$from_template = $from_template.replace(/{ucid}/gim,$data[0].section[$i].ucid);
-                	if($data[0].section[$i].paid_from > 1)
+                	if($data[0].section[$i].paid_from == 1)
                 	{
                 		$paid_from = '(Savings)';
                 	}

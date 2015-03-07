@@ -28,6 +28,7 @@ Route::group(array('before'=>'auth'), function()
 	Route::post('api/cat_reset','AppController@cat_reset');
 
 	Route::resource('budget', 'BudgetController');
+	Route::resource('budget/convert_savings', 'BudgetController@convert_savings');
 	Route::get('add_bank', 'BudgetController@add_bank');
 
 	//Route::get('add', 'EntryController@create');

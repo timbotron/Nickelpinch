@@ -287,7 +287,16 @@ class EntryController extends BaseAppController {
 
 			// $entid,$ucid,$total,$date,$is_add,
 
-			$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,1);
+			if($in['paid_to'] > 1)
+			{
+				// means its going to a uc
+				$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,1);
+			}
+			else
+			{
+				// means it was paid to debit/check
+				$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,0);
+			}
 
 			//Then we update the uc total
 
@@ -454,7 +463,6 @@ class EntryController extends BaseAppController {
 
 	private function save_entry_section($ucid,$entid,$paid_from,$amount)
 	{
-
 		$es = new Entry_section;
 		$es->ucid = $ucid;
 		$es->entid = $entid;
@@ -489,7 +497,7 @@ class EntryController extends BaseAppController {
 							}
 							else
 							{
-								$uc->balance = $uc->balance + $total;
+								$uc->balance = $uc->balance - $total;
 							}
 						}
 						elseif(!$is_delete) $uc->saved = $uc->saved + $total;
@@ -545,7 +553,7 @@ class EntryController extends BaseAppController {
 							}
 							
 						}
-						else $this->save_entry_section($ucid,$entid,1,$total);
+						else $this->save_entry_section($ucid,$entid,2,$total);
 
 						if((date('m-Y') == date('m-Y',strtotime($date))))
 						{
@@ -694,10 +702,10 @@ class EntryController extends BaseAppController {
 		if(Entry::delete_entry($id))
 		{
 			// first do reverse math on entry
-			// fun shit; if its a cc entry we're reversing, gotta be funky because I am a moron and did the
+			// fun stuff; if its a cc entry we're reversing, gotta be funky because I am a moron and did the
 			// stupid ucid = 0 for everyones bank instead of just having an extra row for each user.
 			$is_add = 0;
-			if($entry[0]->type==50)
+			if($entry[0]->type==50 || ($entry[0]->type==10 && $entry[0]->paid_to==0))
 			{
 				$is_add = 1;
 			}
@@ -724,10 +732,6 @@ class EntryController extends BaseAppController {
 									$es->paid_from); 
 
 			}
-
-
-			// loop through 
-
 			return Response::json(array('success' => true), 200); 
 		}
 		else

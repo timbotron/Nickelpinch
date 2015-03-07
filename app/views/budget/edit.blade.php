@@ -7,17 +7,13 @@
 
 <div class="row">
 	<div class="col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3">
-		<div class="alert alert-info"><strong>Archiving</strong><br />Use this to archive or unarchive a category. It's important that we never actually delete a category, so we can always view reports.</div>
-	</div>
-</div>
-<div class="row">
-	<div class="col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3">
 		{{ Form::open($form_data) }}
 			<fieldset>
 			<legend>{{ $uc->class==255 ? 'Unarchive' : 'Archive'}} Category</legend>
 			@foreach($errors->all() as $message)
 			        <div class="alert alert-warning">{{ $message }}</div>
 			@endforeach
+			<div class="alert alert-info">Use this to archive or unarchive a category. It's important that we never actually delete a category, so we can always view reports.</div>
 				@if($uc->class==255)
 				<div class="form-group">
 					{{ Form::label('class', 'Restoring Category to'); }}
