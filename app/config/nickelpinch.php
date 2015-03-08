@@ -84,7 +84,8 @@ return array(
 		50 => 'CC Payment',
 		//60 => 'Bill',
 		70 => 'Deposit',
-		80 => 'Withdraw'
+		80 => 'Withdraw',
+		100 => 'Monthly Reset'
 		)
 
 

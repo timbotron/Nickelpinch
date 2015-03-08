@@ -14,7 +14,13 @@ class BudgetController extends \BaseAppController {
 		View::share('chosen_page','budget');
 		View::share('dom_dd',$this->dom_dd);
 		$form_data = array('url' => 'budget','class'=>'form well','autocomplete'=>'off','method'=>'POST');
-		return View::make('budget.index',['form_data'=>$form_data,'the_class'=>'standard']);
+		$form2_data = array('url' => 'api/cat_reset',
+							'class'=>'form well ajax-me',
+							'data-id'=>'monthly_reset',
+							'data-target'=>'/home',
+							'autocomplete'=>'off',
+							'method'=>'POST');
+		return View::make('budget.index',['form_data'=>$form_data,'form2_data'=>$form2_data,'the_class'=>'standard']);
 	}
 
 
@@ -169,6 +175,8 @@ class BudgetController extends \BaseAppController {
 		$uc->save();
 		return Redirect::to('/home');
 	}
+
+	
 
 
 }

@@ -26,14 +26,7 @@ class AppController extends BaseAppController {
 							'data-target'=>'/home',
 							'autocomplete'=>'off',
 							'method'=>'POST');
-		$form2_data = array('url' => 'api/cat_reset',
-							'class'=>'form well ajax-me',
-							'data-id'=>'monthly_reset',
-							'data-target'=>'/home',
-							'autocomplete'=>'off',
-							'method'=>'POST');
 		return View::make('app.settings',['form1_data'=>$form1_data,
-										'form2_data'=>$form2_data,	
 										'paid_with'=>$this->make_paid_via()
 										]);
 	}
@@ -60,54 +53,7 @@ class AppController extends BaseAppController {
 		}
 	}
 
-	public function cat_reset()
-	{
-		// This is a big one. Reset all the categories balances to 0, and add any diff between
-		// balance and limit into savings.
-
-		try
-        {
-            DB::transaction(function()
-            {
-                foreach($this->user->user_categories as $uc)
-				{
-					$tmp = array();
-					// can't be archived, bank, external savings or savings
-					if($uc->class == 20)
-					{
-						// if there is some room in this categories budget, put it in savings for next month
-						if($uc->balance < $uc->top_limit)
-						{
-							$tmp['saved'] = $uc->saved + ($uc->top_limit -  $uc->balance);
-						}
-						
-						// set balance to 0 and save uc
-						$tmp['balance'] = 0.00;
-						DB::table('user_categories')->where('ucid',$uc->ucid)->update($tmp);
-					}
-					elseif($uc->class == 30)
-					{
-						// is savings
-
-						// set balance to 0 and save uc
-						$tmp['balance'] = 0.00;
-						DB::table('user_categories')->where('ucid',$uc->ucid)->update($tmp);
-					}
-
-
-				}
-
-            });
-        }
-        catch(Exception $e)
-        {
-        	//dd($e->getMessage());
-            return Response::json(array('status' => false, 'errors' => array('total'=>'There was a problem with the categories reset.')), 400);
-        }
-        return Response::json(array('success' => true), 200);
-
-		
-	}
+	
 
 	public function welcome()
 	{

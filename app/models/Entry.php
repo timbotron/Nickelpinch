@@ -53,8 +53,6 @@ class Entry extends Eloquent {
         {
             DB::transaction(function() use ($entid)
             {
-                //DB::select('SELECT * from entries where entid=?',array($entid));
-
                 // destroy entry_sections w/this entid
                 DB::table('entry_sections')->where('entid','=',$entid)->delete();
 

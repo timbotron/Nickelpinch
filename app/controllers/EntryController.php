@@ -701,6 +701,18 @@ class EntryController extends BaseAppController {
 
 		if(Entry::delete_entry($id))
 		{
+			if($entry[0]->type==100)
+			{
+				// SPECIAL CASE; deleting a monthly reset.
+				$tmp = [];
+				foreach($entry[0]->section as $es)
+				{
+					$tmp['balance'] = $es->amount;
+					DB::table('user_categories')->where('ucid',$es->ucid)->update($tmp);
+				}
+				return Response::json(array('success' => true), 200); 
+
+			}
 			// first do reverse math on entry
 			// fun stuff; if its a cc entry we're reversing, gotta be funky because I am a moron and did the
 			// stupid ucid = 0 for everyones bank instead of just having an extra row for each user.
@@ -738,6 +750,49 @@ class EntryController extends BaseAppController {
 		{
 			return Response::json(array('status' => false, 'errors' => array('total'=>'There was a problem deleting this entry.')), 400);
 		}
+	}
+
+	public function cat_reset()
+	{
+		// This is a big one. Reset all the categories balances to 0 and does it in an
+		// entry style, so it can be reversed.
+
+		try
+        {
+            DB::transaction(function()
+            {
+            	// first we save the monthly resetentry
+				$e = new Entry;
+				$e->uid = $this->user->uid;
+				$e->paid_to = 0; 
+				$e->purchase_date = date('Y-m-d');
+				$e->total_amount = 0;
+				$e->description = 'Monthly Reset for '.date('M Y');
+				$e->type = 100;
+				$e->save();
+                foreach($this->user->user_categories as $uc)
+				{
+					$tmp = [];
+					if(in_array($uc->class, [20,30])) // only doing stuff on class 20 (regular) or 30 (savings)
+					{
+						$this->save_entry_section($uc->ucid,$e->entid,2,$uc->balance);
+						
+						// set balance to 0 and save uc
+						$tmp['balance'] = 0.00;
+						DB::table('user_categories')->where('ucid',$uc->ucid)->update($tmp);
+					}
+				}
+
+            });
+        }
+        catch(Exception $e)
+        {
+        	//dd($e->getMessage());
+            return Response::json(array('status' => false, 'errors' => array('total'=>'There was a problem with the categories reset.')), 400);
+        }
+        return Response::json(array('success' => true), 200);
+
+		
 	}
 
 

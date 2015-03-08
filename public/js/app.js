@@ -47,7 +47,6 @@ $(document).ready(function()
             },
           
             timeout: function(response) {
-                // console.log(response);
             },
             error: function(response,two,three) {
                  var $result = jQuery.parseJSON(response.responseText);
@@ -57,18 +56,15 @@ $(document).ready(function()
                  {
                  	if($errors[key] instanceof Array)
                  	{
-                 		console.log($errors[key][0]);
                      	$displayme = $displayme + '<div class="alert alert-warning">'+$errors[key][0]+'</div>';
                  		
                  	}
                  	else
                  	{
-                 		console.log($errors[key]);
                      	$displayme = $displayme + '<div class="alert alert-warning">'+$errors[key]+'</div>';
                  	}
                      
                  }
-                 //// // console.log($displayme);
                  $('.alert-for-delete-'+$target).html($displayme);
             }
         });
@@ -108,7 +104,6 @@ $(document).ready(function()
 
                 
                  var $data = jQuery.parseJSON(response);
-            	console.log($data[0]);
                 $('.entry-'+$target).remove();
                 $button_location.attr('data-expanded',1);
                 $button_location.children().first().addClass('glyphicon-chevron-up').removeClass('glyphicon-chevron-down');
@@ -142,7 +137,6 @@ $(document).ready(function()
             },
           
             timeout: function(response) {
-                // console.log(response);
             },
             error: function(response,two,three) {
                  var $result = jQuery.parseJSON(response.responseText);
@@ -152,18 +146,15 @@ $(document).ready(function()
                  {
                  	if($errors[key] instanceof Array)
                  	{
-                 		console.log($errors[key][0]);
                      	$displayme = $displayme + '<div class="alert alert-warning">'+$errors[key][0]+'</div>';
                  		
                  	}
                  	else
                  	{
-                 		console.log($errors[key]);
                      	$displayme = $displayme + '<div class="alert alert-warning">'+$errors[key]+'</div>';
                  	}
                      
                  }
-                 //// // console.log($displayme);
                  $('.entry-'+$target).html($displayme);
             }
         });
@@ -178,7 +169,6 @@ $(document).ready(function()
 		// Do redirect
 		var $cat = $('#cat_1 option:selected').first().val();
 		var $range = $('#date_range option:selected').first().val();
-		console.log('/history/' + $cat + '/' + $range);
 		window.location = '/history/' + $cat + '/' + $range;
 		return false;
 	});
@@ -191,7 +181,6 @@ $(document).ready(function()
         var $saving = '<div class="alert alert-info" role="alert"><span class="glyphicon glyphicon-cloud-upload"></span> Processing..</div>';
         var $ok = '<div class="alert alert-success" role="alert"><span class="glyphicon glyphicon-ok"></span> Process Successful.</div>';
         $('.btns-to-toggle').hide();
-        // // console.log('submitted form');
         var $identifier = $(this).attr('data-id');
         var $target = $(this).attr('data-target');
         var $params = $(this).serialize();
@@ -206,15 +195,12 @@ $(document).ready(function()
                 dataType: 'json',
                 success: function(response) {
                     
-                     console.log('success! ');
-                     console.log(response);
                     $('.'+$identifier+'-status').html($ok);
                     window.location=$target;
                     
                 },
               
                 timeout: function(response) {
-                    // console.log(response);
                 },
                 error: function(response,two,three) {
                      var $result = jQuery.parseJSON(response.responseText);
@@ -224,18 +210,15 @@ $(document).ready(function()
                      {
                      	if($errors[key] instanceof Array)
                      	{
-                     		console.log($errors[key][0]);
                          	$displayme = $displayme + '<div class="alert alert-warning">'+$errors[key][0]+'</div>';
                      		
                      	}
                      	else
                      	{
-                     		console.log($errors[key]);
                          	$displayme = $displayme + '<div class="alert alert-warning">'+$errors[key]+'</div>';
                      	}
                          
                      }
-                     //// // console.log($displayme);
                      $('.'+$identifier+'-messages').html($displayme);
                      scroll(0,0);
                      $('.btns-to-toggle').show();
