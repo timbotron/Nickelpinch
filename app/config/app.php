@@ -2,6 +2,10 @@
 
 return array(
 
+	// Needed when upgraded to laravel 4.2.*
+
+	'cipher' => MCRYPT_RIJNDAEL_256,
+
 	/*
 	|--------------------------------------------------------------------------
 	| Application Debug Mode
@@ -26,7 +30,7 @@ return array(
 	|
 	*/
 
-	'url' => 'http://localhost',
+	'url' => 'http://nikl.localhost',
 
 	/*
 	|--------------------------------------------------------------------------

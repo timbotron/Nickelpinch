@@ -7,6 +7,16 @@ class BaseController extends Controller {
 	 *
 	 * @return void
 	 */
+
+	public function __construct()
+	{
+
+		$this->currencies = Config::get('nickelpinch.currency_options');
+		View::share('currencies',$this->currencies);
+
+		
+	}
+
 	protected function setupLayout()
 	{
 		if ( ! is_null($this->layout))
