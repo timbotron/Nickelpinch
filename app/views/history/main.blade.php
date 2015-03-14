@@ -72,7 +72,7 @@
 <script id="entry-template-from" type="text/html">
 	<tr>
 		<td>{{ $currency }}{amount}</td>
-		<td colspan="2"><span class="glyphicon glyphicon-chevron-left"></span> {ucid}</td>
+		<td colspan="2"><span class="glyphicon glyphicon-chevron-left"></span> {ucid} {paid_from}</td>
 	</tr>
 </script>
 <script id="entry-template-delete" type="text/html">

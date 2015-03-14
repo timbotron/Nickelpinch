@@ -28,6 +28,7 @@ class BaseAppController extends Controller {
 		$this->budget_needs = 0;
 		$this->remaining_budget = 0;
 		$this->in_saved = 0;
+		$this->in_cc_queue = 0;
 		$this->uc_array = array();
 
 		foreach($this->user->user_categories as &$cat)
@@ -62,7 +63,7 @@ class BaseAppController extends Controller {
 				// need to set color of category label depending on how much money is left to save. 0-30 is red. 31-75 yellow, 76+ green
 				$tmp = $cat->balance / $cat->top_limit;
 
-				$this->remaining_budget += $cat->top_limit - $cat->balance;
+				if($cat->balance <= $cat->top_limit) $this->remaining_budget += $cat->top_limit - $cat->balance;
 
 				if($cat->class == 30) $this->in_saved += $cat->saved;
 
@@ -78,7 +79,7 @@ class BaseAppController extends Controller {
 			if($cat->class == 10)
 			{
 				// Is a CC, just need to update remaining_budget
-				$this->remaining_budget += $cat->balance;
+				$this->in_cc_queue += $cat->balance;
 			}
 
 			if($cat->class == 8)
@@ -95,8 +96,9 @@ class BaseAppController extends Controller {
 		{
 			$this->bank_info['remaining_budget'] = $this->remaining_budget;
 			$this->bank_info['in_saved'] = $this->in_saved;
+			$this->bank_info['in_cc_queue'] = $this->in_cc_queue;
 			$tmp = 0;
-			$tmp = $this->bank_info['balance'] - $this->remaining_budget - $this->in_saved;
+			$tmp = $this->bank_info['balance'] - $this->remaining_budget - $this->in_saved - $this->in_cc_queue;
 
 			$this->bank_info['remaining'] = $tmp;
 		}
@@ -148,17 +150,22 @@ class BaseAppController extends Controller {
 
 	public function make_all_cats()
 	{
-		$classes = array('all_wCC','all',10,20,30);
+		$classes = array('history','all_wCC','all',10,20,30);
 		$returnme = array();
 		foreach($classes as $class)
 		{
 			$ret = array();
 			if($class=='all_wCC') $ret[0] = $this->bank_info['name'];
+			elseif($class=='history')
+			{
+				$ret['type:70'] = 'Deposits';
+				$ret['type:80'] = 'Withdraws';
+			}
 			else $ret[0] = 'Choose..';
 			foreach($this->user->user_categories as $c)
 			{
 				if($class=='all' && ($c->class==20 || $c->class==30)) $ret[(int)$c->ucid] = $c->category_name;
-				elseif($class=='all_wCC' && (in_array($c->class, array(10,20,30)))) $ret[(int)$c->ucid] = $c->category_name;
+				elseif(in_array($class,array('all_wCC','history')) && (in_array($c->class, array(10,20,30)))) $ret[(int)$c->ucid] = $c->category_name;
 				elseif($c->class==$class) $ret[(int)$c->ucid] = $c->category_name;
 			}
 			$returnme[$class] = $ret;

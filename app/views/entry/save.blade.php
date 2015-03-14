@@ -46,7 +46,7 @@
 					<div class="col-xs-6 multi-cats" style="display:none;">
 						<div class="input-group">
 		  					<span class="input-group-addon">{{ $currency }}</span> 
-							{{ Form::input('number','cat_1_val',null,array('class'=>'form-control')) }}
+							{{ Form::input('number','cat_1_val',null,array('class'=>'form-control','step'=>'any','min'=>'0')) }}
 						</div>
 					</div>
 					<div class="col-xs-6 multi-cats" style="display:none;">
@@ -55,7 +55,7 @@
 					<div class="col-xs-6 multi-cats" style="display:none;">
 						<div class="input-group">
 		  					<span class="input-group-addon">{{ $currency }}</span> 
-							{{ Form::input('number','cat_2_val',null,array('class'=>'form-control')) }}
+							{{ Form::input('number','cat_2_val',null,array('class'=>'form-control','step'=>'any','min'=>'0')) }}
 						</div>
 					</div>
 					<div class="col-xs-6 multi-cats" style="display:none;">
@@ -64,7 +64,7 @@
 					<div class="col-xs-6 multi-cats" style="display:none;">
 						<div class="input-group">
 		  					<span class="input-group-addon">{{ $currency }}</span> 
-							{{ Form::input('number','cat_3_val',null,array('class'=>'form-control')) }}
+							{{ Form::input('number','cat_3_val',null,array('class'=>'form-control','step'=>'any','min'=>'0')) }}
 						</div>
 					</div>
 				</div>

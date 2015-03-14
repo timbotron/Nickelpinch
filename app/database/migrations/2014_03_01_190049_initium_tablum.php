@@ -82,7 +82,7 @@ class InitiumTablum extends Migration {
 	        $table->integer('entid')->unsigned()->index();
 	        $table->integer('ucid')->unsigned()->index();
 	        $table->decimal('amount', 22, 2);
-	        //$table->integer('paid_from')->unsigned()->index(); // from savings or from balance
+	        $table->integer('paid_from')->unsigned()->index(); // from 1 = savings or from 2 = balance
 
 	        $table->foreign('entid')->references('entid')->on('entries');
 	        $table->foreign('ucid')->references('ucid')->on('user_categories');
@@ -104,7 +104,6 @@ class InitiumTablum extends Migration {
 		Schema::drop('entry_sections');
 		Schema::drop('entries');
 		Schema::drop('user_categories');
-		Schema::drop('stores');
 		Schema::drop('users');
 	}
 

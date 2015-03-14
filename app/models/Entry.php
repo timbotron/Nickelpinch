@@ -19,6 +19,19 @@ class Entry extends Eloquent {
     }
     public static function history_for($ucid, $day_range=30)
     {
+        if(strpos($ucid, ':'))
+        {
+            // means we need to search by type
+            $where = 'entries.type = ?';
+            $filter = (int)substr($ucid, strpos($ucid, ':')+1);
+            $filter = array($filter,$day_range);
+        }
+        else
+        {
+            $where = '(entries.paid_to = ? OR entry_sections.ucid = ?)';
+            $filter = array($ucid,$ucid,$day_range);
+
+        }
         $day_range++;
         $sql = "SELECT entries.entid,
                         entries.type,
@@ -30,8 +43,8 @@ class Entry extends Eloquent {
                         entry_sections.ucid
                 FROM entries
                 LEFT JOIN entry_sections ON entries.entid=entry_sections.entid
-                WHERE (entries.paid_to = ? OR entry_sections.ucid = ?) AND purchase_date >= (NOW() - INTERVAL ? DAY) ORDER BY purchase_date DESC";
-        return DB::select($sql,array($ucid,$ucid,$day_range));
+                WHERE $where AND purchase_date >= (NOW() - INTERVAL ? DAY) GROUP BY entries.entid ORDER BY purchase_date DESC";
+        return DB::select($sql,$filter);
     }
 
     public static function delete_entry($entid)
@@ -40,8 +53,6 @@ class Entry extends Eloquent {
         {
             DB::transaction(function() use ($entid)
             {
-                //DB::select('SELECT * from entries where entid=?',array($entid));
-
                 // destroy entry_sections w/this entid
                 DB::table('entry_sections')->where('entid','=',$entid)->delete();
 

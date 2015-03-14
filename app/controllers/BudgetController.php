@@ -14,7 +14,13 @@ class BudgetController extends \BaseAppController {
 		View::share('chosen_page','budget');
 		View::share('dom_dd',$this->dom_dd);
 		$form_data = array('url' => 'budget','class'=>'form well','autocomplete'=>'off','method'=>'POST');
-		return View::make('budget.index',['form_data'=>$form_data,'the_class'=>'standard']);
+		$form2_data = array('url' => 'api/cat_reset',
+							'class'=>'form well ajax-me',
+							'data-id'=>'monthly_reset',
+							'data-target'=>'/home',
+							'autocomplete'=>'off',
+							'method'=>'POST');
+		return View::make('budget.index',['form_data'=>$form_data,'form2_data'=>$form2_data,'the_class'=>'standard']);
 	}
 
 
@@ -60,7 +66,7 @@ class BudgetController extends \BaseAppController {
 			$uc->save();
 
 			// Hash::make($password);
-			if(Input::get('class')=='bank_account') return Redirect::to('/add_bank');
+			if(Input::get('class')=='bank_account') return Redirect::to('/home');
 			else return Redirect::to('/budget');
 		}
 		else
@@ -129,7 +135,6 @@ class BudgetController extends \BaseAppController {
 
 			$uc->save();
 
-			// Hash::make($password);
 			return Redirect::to('/budget');
 		}
 		else
@@ -157,6 +162,21 @@ class BudgetController extends \BaseAppController {
 		$form_data = array('url' => 'budget','class'=>'form well','autocomplete'=>'off','method'=>'POST');
 		return View::make('budget.add_bank_parent',['form_data'=>$form_data,'the_class'=>'bank_account']);
 	}
+	public function convert_savings()
+	{
+		$uc = User_category::find(Input::get('ucid'));
+		if($uc->uid != $this->user->uid) return Redirect::to('/budget');
+
+		$saved = $uc->saved;
+		$uc->balance = 0.00;
+		$uc->saved = 0.00;
+		$uc->top_limit = $saved;
+		$uc->class = 20; // setting to normal
+		$uc->save();
+		return Redirect::to('/home');
+	}
+
+	
 
 
 }
