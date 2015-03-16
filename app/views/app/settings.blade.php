@@ -23,21 +23,6 @@
 			</div>
 			</fieldset>
 			{{ Form::close() }}
-
-			{{ Form::open($form2_data) }}
-			<fieldset>
-			<legend>Category Reset</legend>
-			<div class="alert alert-info" role="alert">This is the reset that you use when you have entered a new month. It sets all the category balances to zero, and any extra room in your categories get moved to savings<br /><strong>This cannot be undone.</strong></div>
-			<div class="monthly_reset-messages"></div>			
-
-			{{-- Form submit button. --------------------}}
-			<div class="default_pmt-status"></div>
-			<div class="btns-to-toggle">
-				{{ Form::submit('Reset Categories',['class'=>'btn btn-primary']) }}
-				<a class="btn btn-default" href="/home">Cancel</a>
-			</div>
-			</fieldset>
-			{{ Form::close() }}
 			
 
 			
