@@ -21,6 +21,20 @@
 					</div>
 				</div>
 				<div class="form-group">
+					{{ Form::label('balance', 'Current Balance'); }}
+					<div class="input-group">
+  						<span class="input-group-addon">{{ $currency }}</span> 
+						{{ Form::input('number','balance',$uc->balance,array('class'=>'form-control')) }}
+					</div>
+				</div>
+				<div class="form-group">
+					{{ Form::label('saved', 'Amount Saved'); }}
+					<div class="input-group">
+  						<span class="input-group-addon">{{ $currency }}</span> 
+						{{ Form::input('number','saved',$uc->saved,array('class'=>'form-control')) }}
+					</div>
+				</div>
+				<div class="form-group">
 					{{ Form::label('rank', 'Position'); }}
 					{{ Form::input('number','rank',$uc->rank,array('class'=>'form-control')) }}
 				</div>

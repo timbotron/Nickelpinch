@@ -114,6 +114,8 @@ class BudgetController extends \BaseAppController {
 		$rules = [
 					'category_name' => 'required|between:3,255',
 					'top_limit'		=> 'required|numeric',
+					'balance'		=> 'required|numeric',
+					'saved'		=> 'required|numeric',
 					'due_date'		=> 'integer',
 					'rank'		=> 'integer',
 					'class'			=> 'required'
@@ -126,6 +128,8 @@ class BudgetController extends \BaseAppController {
 			// Gotta store user_category
 			$uc->category_name = Input::get('category_name');
 			$uc->top_limit = Input::get('top_limit');
+			$uc->balance = Input::get('balance');
+			$uc->saved = Input::get('saved');
 			$uc->rank = Input::get('rank');
 			if(Input::get('is_archive_feature')) $uc->class = Input::get('class');
 
