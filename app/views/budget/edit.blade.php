@@ -24,6 +24,8 @@
 				@endif
 
 				{{ Form::hidden('top_limit',$uc->top_limit) }}
+				{{ Form::hidden('saved',$uc->saved) }}
+				{{ Form::hidden('balance',$uc->balance) }}
 				{{ Form::hidden('category_name',$uc->category_name) }}
 				{{ Form::hidden('rank',1000) }}
 				{{ Form::hidden('is_archive_feature',1) }}

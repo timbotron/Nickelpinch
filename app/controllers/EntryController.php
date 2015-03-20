@@ -46,7 +46,7 @@ class EntryController extends BaseAppController {
 										'target_cat'=>$target,
 										'dates'=>$this->days,	
 										'paid_with'=>$this->paid_via,
-										'cats_dd'=>$this->all_cats_dd[20]
+										'cats_dd'=>$this->all_cats_dd['all']
 										]);
 		
 	}
