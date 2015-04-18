@@ -337,10 +337,7 @@ class EntryController extends BaseAppController {
 			$e->type = $type;
 			$e->save();
 
-			// $entid,$ucid,$total,$date,$is_add,
-
-
-			$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,1);
+			$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,1,0,0,2,$type);
 
 			return true;	
 		}
@@ -471,7 +468,7 @@ class EntryController extends BaseAppController {
 		$es->save();
 	}
 
-	private function do_the_math($entid,$ucid,$total,$date,$is_add,$is_move=0,$is_delete=0,$paid_from=0)
+	private function do_the_math($entid,$ucid,$total,$date,$is_add,$is_move=0,$is_delete=0,$paid_from=0,$entry_type=0)
 	{
 		if($ucid>1)
 		{
@@ -518,8 +515,21 @@ class EntryController extends BaseAppController {
 					case 30:
 					case 40:
 						// Is a savings or external savings
-						if(!$is_move || (($is_move || $is_delete) && (date('m-Y') == date('m-Y',strtotime($date))))) $uc->balance = $uc->balance + $total;
 						$uc->saved = $uc->saved + $total;
+
+						//is in current month?
+						if(date('m-Y') == date('m-Y',strtotime($date))) {
+							if($entry_type == 20) { // its a move
+								if($is_delete) {
+									$uc->balance = $uc->balance - $total;
+								}
+								else {
+									$uc->balance = $uc->balance + $total;
+								}
+							}
+
+							
+						}
 						break;
 				}
 				
@@ -541,19 +551,19 @@ class EntryController extends BaseAppController {
 							if($uc->saved>=$total)
 							{
 								$uc->saved = $uc->saved - $total;								
-								$this->save_entry_section($ucid,$entid,1,$total);
+								if(!$is_delete) $this->save_entry_section($ucid,$entid,1,$total);
 							}
 							else
 							{
 								// means this is a two entry section one, some out of savings, rest out of balance
-								$this->save_entry_section($ucid,$entid,1,$uc->saved);
+								if(!$is_delete) $this->save_entry_section($ucid,$entid,1,$uc->saved);
 								$diff = $total - $uc->saved;
 								$uc->saved = 0.00; // we used all of it
-								$this->save_entry_section($ucid,$entid,2,$diff);
+								if(!$is_delete) $this->save_entry_section($ucid,$entid,2,$diff);
 							}
 							
 						}
-						else $this->save_entry_section($ucid,$entid,2,$total);
+						elseif(!$is_delete) $this->save_entry_section($ucid,$entid,2,$total);
 
 						if((date('m-Y') == date('m-Y',strtotime($date))))
 						{
@@ -576,11 +586,16 @@ class EntryController extends BaseAppController {
 							if($uc->saved>=$total)
 							{
 								$uc->saved = $uc->saved - $total;
+
 							}
 							else 
 							{
 								$uc->saved  = 0.00;
 							}
+							if(!$is_delete) $this->save_entry_section($ucid,$entid,1,$total);
+						}
+						if(date('m-Y') == date('m-Y',strtotime($date))) {
+							$uc->balance = $uc->balance - $total;
 						}
 						break;
 				}
@@ -733,7 +748,7 @@ class EntryController extends BaseAppController {
 			// Then for each entry section
 			foreach($entry[0]->section as $es)
 			{
-				$this->do_the_math(
+				$this->do_the_math(			// TODO need to deal with deleting if its from savings, want to add to saved but thats it
 									$id,
 									$es->ucid,
 									$es->amount,
@@ -741,7 +756,8 @@ class EntryController extends BaseAppController {
 									1,
 									0,
 									1,
-									$es->paid_from); 
+									$es->paid_from,
+									$entry[0]->type); 
 
 			}
 			return Response::json(array('success' => true), 200); 
