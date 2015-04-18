@@ -543,39 +543,6 @@ class EntryController extends BaseAppController {
 							}
 
 						}
-						/*
-						$diff = 0.00;
-						if($uc->saved>0)
-						{
-							if($uc->saved>=$total)
-							{
-								$uc->saved = $uc->saved - $total;								
-								if(!$is_delete) $this->save_entry_section($ucid,$entid,1,$total);
-							}
-							else
-							{
-								// means this is a two entry section one, some out of savings, rest out of balance
-								if(!$is_delete) $this->save_entry_section($ucid,$entid,1,$uc->saved);
-								$diff = $total - $uc->saved;
-								$uc->saved = 0.00; // we used all of it
-								if(!$is_delete) $this->save_entry_section($ucid,$entid,2,$diff);
-							}
-							
-						}
-						elseif(!$is_delete) $this->save_entry_section($ucid,$entid,2,$total);
-
-						if((date('m-Y') == date('m-Y',strtotime($date))))
-						{
-							if($diff) // if this was split
-							{
-								$uc->balance = $uc->balance + $diff;
-							}
-							else
-							{
-								$uc->balance = $uc->balance + $total;
-							}
-						}
-						*/
 						
 						break;
 					case 30:
