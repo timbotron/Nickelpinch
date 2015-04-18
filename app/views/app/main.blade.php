@@ -17,7 +17,10 @@
 		                		<a href="/history/{{ $cat->ucid }}">{{ $cat->category_name }}</a><br>
 		                		<span class="{{ $cat->color }}">{{ $currency.number_format($cat->balance,2,'.','') }} / {{ $currency.number_format($cat->top_limit,2,'.','') }}</span>
 		                		@if($cat->saved > 0)
-		                		<span class="label label-default"><span class="glyphicon glyphicon-lock"></span> {{ $currency.number_format($cat->saved,2,'.','') }}</span>
+		                		<span class="label {{ $cat->class == 30 ? 'label-default' : 'label-success' }}">
+		                			<span class="glyphicon {{ $cat->class == 30 ? 'glyphicon-lock' : 'glyphicon-plus' }}"></span> 
+		                			{{ $currency.number_format($cat->saved,2,'.','') }}
+		                		</span>
 		                		@endif
 		                	</td>
 		                	<td class="vert-align">

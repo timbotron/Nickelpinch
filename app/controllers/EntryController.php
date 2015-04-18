@@ -485,19 +485,7 @@ class EntryController extends BaseAppController {
 						break;
 					case 20:
 						// Is a normal acct
-						if($paid_from)
-						{
-							// means we have to respect the paid_from
-							if($paid_from == 1)
-							{
-								$uc->saved = $uc->saved + $total;
-							}
-							else
-							{
-								$uc->balance = $uc->balance - $total;
-							}
-						}
-						elseif(!$is_delete) $uc->saved = $uc->saved + $total;
+						if(!$is_delete) $uc->saved = $uc->saved + $total;
 						else // is delete
 						{
 							// means its in same month; we need to actually reduce the balance
@@ -545,6 +533,17 @@ class EntryController extends BaseAppController {
 						break;
 					case 20:
 						// Is a normal acct
+						if($is_delete) {
+							// wil lhappen
+						}
+						else {
+							$this->save_entry_section($ucid,$entid,2,$total);
+							if((date('m-Y') == date('m-Y',strtotime($date)))) {
+								$uc->balance = $uc->balance + $total;
+							}
+
+						}
+						/*
 						$diff = 0.00;
 						if($uc->saved>0)
 						{
@@ -576,6 +575,7 @@ class EntryController extends BaseAppController {
 								$uc->balance = $uc->balance + $total;
 							}
 						}
+						*/
 						
 						break;
 					case 30:
@@ -789,13 +789,35 @@ class EntryController extends BaseAppController {
                 foreach($this->user->user_categories as $uc)
 				{
 					$tmp = [];
-					if(in_array($uc->class, [20,30])) // only doing stuff on class 20 (regular) or 30 (savings)
+					if(in_array($uc->class, [20,30]))
 					{
 						$this->save_entry_section($uc->ucid,$e->entid,2,$uc->balance);
-						
-						// set balance to 0 and save uc
-						$tmp['balance'] = 0.00;
+
+						if($uc->class == 20) {
+							// we need to see if we need to alter overflow amt
+
+							if($uc->balance < $uc->top_limit) {
+								$uc->saved += ($uc->top_limit - $uc->balance);
+							}
+							else { // means spent more than what we budgeted for, we need to reduce the saved if there is some
+								if($uc->saved > 0) {
+									if(($uc->balance - $uc->top_limit) > $uc->saved) {
+										$uc->saved = 0.00;
+									}
+									else {
+										$uc->saved = $uc->saved - ($uc->balance - $uc->top_limit);
+									}
+								}
+							}
+							$tmp = ['balance' => 0.00, 'saved' => $uc->saved];
+						}
+						else {
+							// set balance to 0 and save uc
+							$tmp['balance'] = 0.00;
+							
+						}
 						DB::table('user_categories')->where('ucid',$uc->ucid)->update($tmp);
+						
 					}
 				}
 
