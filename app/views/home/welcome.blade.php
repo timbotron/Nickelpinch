@@ -5,10 +5,10 @@
 	<div class="row">
 		<div class="hidden-xs col-md-5 col-md-offset-1">
 			<h2>This is a Nickelpinch instance</h2>
-			<p class="lead">Nickelpinch is a web-based, personal finance application. Features include a simple intuitive interface, budgeting, reports, etc.</p>
+			<p class="lead">Nickelpinch is a web-based budgeting tool.</p>
 			<p class="lead">It is open-source, and free to use.</p>
 			<p class="lead">For more information, please visit our site</p>
-			<a href="http://nickelpinch.org" class="btn btn-success btn-lg">Visit Nickelpinch.org</a>
+			<a href="http://nickelpinch.com" class="btn btn-success btn-lg">Visit Nickelpinch.com</a>
 		</div>
 		<div class="well col-xs-8 col-xs-offset-2 col-md-4 col-md-offset-1">
 			{{ Form::open(array('url' => 'login','class'=>'form','autocomplete'=>'off')) }}
