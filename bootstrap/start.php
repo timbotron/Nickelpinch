@@ -26,7 +26,7 @@ $app = new Illuminate\Foundation\Application;
 
 $env = $app->detectEnvironment(array(
 
-	'local' => array('packer-virtualbox'),
+	'local' => array('packer-virtualbox','timh-vagrant'),
 	'production' => array('starbase188')
 ));
 
