@@ -7,8 +7,8 @@
     <title>Nickelpinch</title>
 
     <!-- Bootstrap -->
-    <link async href="/css/bootstrap.min.css" rel="stylesheet">
-    <link async href="/css/bootstrap.tweaks.css" rel="stylesheet">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap.tweaks.css" rel="stylesheet">
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -29,11 +29,11 @@
     @yield('content')
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script async src="/js/jquery.1.11.0.min.js"></script>
+    <script src="/js/jquery.1.11.0.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script async src="/js/bootstrap.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
     @if(Auth::check())
-    <script async src="/js/app.js?v=11"></script>
+    <script src="/js/app.js?v=11"></script>
     @endif
   </body>
 </html>
