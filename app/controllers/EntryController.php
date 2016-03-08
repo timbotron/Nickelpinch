@@ -75,29 +75,6 @@ class EntryController extends BaseAppController {
 	}
 
 	/**
-	 * Show the form for saving money to a savings category
-	 *
-	 * @return Response
-	 */
-	public function save($target = 0)
-	{
-		
-		View::share('chosen_page','none');
-		$form_data = array('url' => 'api/new_entry/20',
-							'class'=>'form well ajax-me',
-							'data-id'=>'entry',
-							'data-target'=>'/home',
-							'autocomplete'=>'off',
-							'method'=>'POST');
-		return View::make('entry.save',['form_data'=>$form_data,
-										'target_cat'=>$target,
-										'dates'=>$this->days,	
-										'cats_dd'=>$this->all_cats_dd[30]
-										]);
-		
-	}
-
-	/**
 	 * Show the form for withdrawing from a user category or depositing
 	 *
 	 * @return Response
@@ -199,15 +176,6 @@ class EntryController extends BaseAppController {
 				$rules['cat_1'] = 'required|numeric';
 			}
 
-		}
-		elseif($type==20) // savings entry
-		{
-			$rules = [
-					'amount' 	=> 'required|numeric',
-					'date'		=> 'required|date',
-					'cat_1' 	=> 'required|numeric'
-				];
-			
 		}
 		elseif($type==70) // deposit or withdraw entry
 		{
