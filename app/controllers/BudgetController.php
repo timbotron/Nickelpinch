@@ -166,21 +166,5 @@ class BudgetController extends \BaseAppController {
 		$form_data = array('url' => 'budget','class'=>'form well','autocomplete'=>'off','method'=>'POST');
 		return View::make('budget.add_bank_parent',['form_data'=>$form_data,'the_class'=>'bank_account']);
 	}
-	public function convert_savings()
-	{
-		$uc = User_category::find(Input::get('ucid'));
-		if($uc->uid != $this->user->uid) return Redirect::to('/budget');
-
-		$saved = $uc->saved;
-		$uc->balance = 0.00;
-		$uc->saved = 0.00;
-		$uc->top_limit = $saved;
-		$uc->class = 20; // setting to normal
-		$uc->save();
-		return Redirect::to('/home');
-	}
-
-	
-
 
 }

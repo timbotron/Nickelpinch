@@ -14,14 +14,6 @@
   				<input type="checkbox"  value="c10"> <span class="label label-primary">Credit Card</span>
 			</label>
 			<label class="checkbox-inline filter-budget">
-  				<input type="checkbox"  value="c30"> <span class="label label-success">Savings</span>
-			</label>
-			<!--
-			<label class="checkbox-inline filter-budget">
-  				<input type="checkbox"  value="c40"> <span class="label label-success">External Savings</span>
-			</label>
-			-->
-			<label class="checkbox-inline filter-budget">
   				<input type="checkbox"  value="c255"> <span class="label label-default">Archived</span>
 			</label>
 
@@ -51,10 +43,6 @@
 							<span class="label label-primary">
 							@elseif($nikl_config['uc_class_def'][$cat->class] == 'Credit Card')
 							<span class="label label-primary">
-							@elseif($nikl_config['uc_class_def'][$cat->class] == 'Savings')
-							<span class="label label-success">
-							@elseif($nikl_config['uc_class_def'][$cat->class] == 'External Savings')
-							<span class="label label-success">
 							@else
 							<span class="label label-default">
 							@endif

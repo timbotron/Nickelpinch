@@ -27,7 +27,6 @@ Route::group(['before'=>'auth'], function()
 	Route::post('api/save_default_pmt','AppController@save_default_pmt');
 
 	Route::resource('budget', 'BudgetController');
-	Route::post('budget/convert_savings', 'BudgetController@convert_savings');
 	Route::get('add_bank', 'BudgetController@add_bank');
 
 	Route::get('add/{target}', 'EntryController@create');
