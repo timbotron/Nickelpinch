@@ -237,6 +237,12 @@ class EntryController extends BaseAppController {
 
 	}
 
+	private function spent_from_uc($ucid,$amount) {
+		$uc = User_category::find($eucid);
+		$uc->balance = $uc->balance + $amount;
+		$uc->save();
+	}
+
 	private function save_entry($in,$type=10)
 	{
 		if($type==10) // new entry
@@ -251,25 +257,28 @@ class EntryController extends BaseAppController {
 			$e->type = $type;
 			$e->save();
 
-			// now we add that amt to the paid_to
+			// Now we alter the user category amounts to reflect the entry
 
-			// $entid,$ucid,$total,$date,$is_add,
-
-			if($in['paid_to'] > 1)
-			{
-				// means its going to a uc
-				$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,1);
+			// First, lets alter amounts for where the money is going TO
+			$uc = User_category::find($e->paid_to);
+			switch($uc->class) {
+				case 8:
+					// Is Bank Account
+					$uc->balance = $uc->balance - $e->total_amount;
+					break;
+				case 10:
+					// Is a CC
+					$uc->balance = $uc->balance + $e->total_amount;
+					break;
+				case 20:
+					// Is a normal acct
+					$uc->saved = $uc->saved + $e->total_amount;
+					break;
 			}
-			else
-			{
-				// means it was paid to debit/check
-				$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,0);
-			}
+			$uc->save();
+			unset($uc);
 
-			//Then we update the uc total
-
-
-			// now we save the entry_section(s)
+			// Now, lets alter amounts for where the money is coming FROM
 			// is this a multi-cat purchase?
 			if(isset($in['using_multi_cats']))
 			{
@@ -278,36 +287,16 @@ class EntryController extends BaseAppController {
 				{
 					if($in['cat_'.$i]!='0')
 					{
-						// now we do math
-						$this->do_the_math($e->entid,$in['cat_'.$i],$in['cat_'.$i.'_val'],$e->purchase_date,0);
+						$this->spent_from_uc($in['cat_'.$i],$in['cat_'.$i.'_val']);
 					}
 				}
 			}
 			else
 			{
 				// single
-				// now we do math
-				$this->do_the_math($e->entid,$in['cat_1'],$in['amount'],$e->purchase_date,0);
-
-				
+				$this->spent_from_uc($in['cat_1'],$in['amount']);
 			}
 		return true;	
-		}
-		elseif($type==20) // to savings
-		{
-			// first we save the entry
-			$e = new Entry;
-			$e->uid = $this->user->uid;
-			$e->paid_to = $in['cat_1'];
-			$e->purchase_date = $in['date'];
-			$e->total_amount = $in['amount'];
-			$e->description = $in['description'];
-			$e->type = $type;
-			$e->save();
-
-			$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,1,0,0,2,$type);
-
-			return true;	
 		}
 		elseif($type==70 || $type == 80) // deposit / withdraw
 		{
@@ -436,6 +425,10 @@ class EntryController extends BaseAppController {
 		$es->save();
 	}
 
+	private function add_to_uc($ucid,$amount,$date,$entid) {
+		
+	}
+
 	private function do_the_math($entid,$ucid,$total,$date,$is_add,$is_move=0,$is_delete=0,$paid_from=0,$entry_type=0)
 	{
 		if($ucid>1)
@@ -468,25 +461,6 @@ class EntryController extends BaseAppController {
 						}
 						
 						break;
-					case 30:
-					case 40:
-						// Is a savings or external savings
-						$uc->saved = $uc->saved + $total;
-
-						//is in current month?
-						if(date('m-Y') == date('m-Y',strtotime($date))) {
-							if($entry_type == 20) { // its a move
-								if($is_delete) {
-									$uc->balance = $uc->balance - $total;
-								}
-								else {
-									$uc->balance = $uc->balance + $total;
-								}
-							}
-
-							
-						}
-						break;
 				}
 				
 			}
@@ -512,26 +486,6 @@ class EntryController extends BaseAppController {
 
 						}
 						
-						break;
-					case 30:
-					case 40:
-						// Is a savings or external savings
-						if($uc->saved>0)
-						{
-							if($uc->saved>=$total)
-							{
-								$uc->saved = $uc->saved - $total;
-
-							}
-							else 
-							{
-								$uc->saved  = 0.00;
-							}
-							if(!$is_delete) $this->save_entry_section($ucid,$entid,1,$total);
-						}
-						if(date('m-Y') == date('m-Y',strtotime($date))) {
-							$uc->balance = $uc->balance - $total;
-						}
 						break;
 				}
 			}
