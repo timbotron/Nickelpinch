@@ -238,7 +238,7 @@ class EntryController extends BaseAppController {
 	}
 
 	private function spent_from_uc($ucid,$amount) {
-		$uc = User_category::find($eucid);
+		$uc = User_category::find($ucid);
 		$uc->balance = $uc->balance + $amount;
 		$uc->save();
 	}
@@ -260,7 +260,11 @@ class EntryController extends BaseAppController {
 			// Now we alter the user category amounts to reflect the entry
 
 			// First, lets alter amounts for where the money is going TO
-			$uc = User_category::find($e->paid_to);
+			if($e->paid_to == 0) {
+				$uc = User_category::find($this->bank_info['ucid']);
+			} else {
+				$uc = User_category::find($e->paid_to);
+			}
 			switch($uc->class) {
 				case 8:
 					// Is Bank Account
@@ -288,6 +292,7 @@ class EntryController extends BaseAppController {
 					if($in['cat_'.$i]!='0')
 					{
 						$this->spent_from_uc($in['cat_'.$i],$in['cat_'.$i.'_val']);
+						$this->save_entry_section($in['cat_'.$i],$e->entid,2,$in['cat_'.$i.'_val']);
 					}
 				}
 			}
@@ -295,6 +300,7 @@ class EntryController extends BaseAppController {
 			{
 				// single
 				$this->spent_from_uc($in['cat_1'],$in['amount']);
+				$this->save_entry_section($in['cat_1'],$e->entid,2,$in['amount']);
 			}
 		return true;	
 		}
@@ -423,10 +429,6 @@ class EntryController extends BaseAppController {
 		$es->paid_from = $paid_from;
 		$es->amount = $amount;
 		$es->save();
-	}
-
-	private function add_to_uc($ucid,$amount,$date,$entid) {
-		
 	}
 
 	private function do_the_math($entid,$ucid,$total,$date,$is_add,$is_move=0,$is_delete=0,$paid_from=0,$entry_type=0)
