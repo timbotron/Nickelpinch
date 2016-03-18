@@ -260,24 +260,12 @@ class EntryController extends BaseAppController {
 			// Now we alter the user category amounts to reflect the entry
 
 			// First, lets alter amounts for where the money is going TO
-			if($e->paid_to == 0) {
-				$uc = User_category::find($this->bank_info['ucid']);
-			} else {
-				$uc = User_category::find($e->paid_to);
-			}
-			switch($uc->class) {
-				case 8:
-					// Is Bank Account
-					$uc->balance = $uc->balance - $e->total_amount;
-					break;
-				case 10:
-					// Is a CC
-					$uc->balance = $uc->balance + $e->total_amount;
-					break;
-				case 20:
-					// Is a normal acct
-					$uc->saved = $uc->saved + $e->total_amount;
-					break;
+			$uc = User_category::find($e->paid_to);
+
+			if($uc->class == 8) { // Is Bank Account
+				$uc->balance = $uc->balance - $e->total_amount;
+			} elseif($uc->class == 10) { // Is CC
+				$uc->balance = $uc->balance + $e->total_amount;
 			}
 			$uc->save();
 			unset($uc);
@@ -316,18 +304,19 @@ class EntryController extends BaseAppController {
 			$e->description = $in['description'];
 			$e->type = $type;
 			$e->save();
+				
+			$uc = User_category::find($this->bank_info['ucid']);
+			if($in['the_class'] == 70) {
+				$uc->balance = $uc->balance + $e->total_amount;
+			} else {
+				$uc->balance = $uc->balance - $e->total_amount;
 
-			$dep_or_with = 0;
-			if($in['the_class'] == 70)
-			{
-				$dep_or_with = 1;
 			}
-
-
-			$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,$dep_or_with);
+			$uc->save();
+			unset($uc);
 
 			// if this is a withdraw, we need to reduce the uc it came from so need an entry_section
-			if($e->paid_to==0 && ($this->bank_info['ucid'] != $in['cat_1']))
+			if($in['the_class'] == 80 && ($this->bank_info['ucid'] != $in['cat_1']))
 			{
 				$es = new Entry_section;
 				$es->ucid = $in['cat_1'];
@@ -336,7 +325,7 @@ class EntryController extends BaseAppController {
 				$es->save();
 
 				// now we do math
-				$this->do_the_math($e->entid,$es->ucid,$es->amount,$e->purchase_date,0);
+				$this->spent_from_uc($es->ucid,$es->amount);
 			}
 
 			
