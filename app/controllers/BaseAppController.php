@@ -150,14 +150,15 @@ class BaseAppController extends Controller {
 		return $ret;
 	}
 
-	public function make_all_cats()
+	public function make_all_cats() 
 	{
 		$classes = array('history','all_wCC','all',10,20,30);
 		$returnme = array();
 		foreach($classes as $class)
 		{
 			$ret = array();
-			if($class=='all_wCC') $ret[$this->bank_info['ucid']] = $this->bank_info['name'];
+			if($class=='all') $ret[0] = 'Choose..';
+			if($class=='all_wCC') $ret[(int)$this->bank_info['ucid']] = $this->bank_info['name'];
 			if($class=='history')
 			{
 				$ret['type:70'] = 'Deposits';

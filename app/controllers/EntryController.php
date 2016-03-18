@@ -177,7 +177,7 @@ class EntryController extends BaseAppController {
 			}
 
 		}
-		elseif($type==70) // deposit or withdraw entry
+		elseif($type==70 || $type==80) // deposit or withdraw entry
 		{
 			$rules = [
 					'the_class'		=> 'required|numeric',
@@ -343,15 +343,20 @@ class EntryController extends BaseAppController {
 			$e->type = $type;
 			$e->save();
 
+			// reduce balance on CC
+			$uc = User_category::find($this->bank_info['ucid']);
+			$uc->balance = $uc->balance - $e->total_amount;
+			$uc->save();
+			unset($uc);
 
-			$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,0);
+			// reduce balance on bank
+			$uc = User_category::find($in['cat_1']);
+			$uc->balance = $uc->balance - $e->total_amount;
+			$uc->save();
+			unset($uc);
 
-			// Reduce the CC balance by the amount
+			// We save the where it came from details
 			$this->save_entry_section($in['cat_1'],$e->entid,1,$in['amount']);
-			// now we do math
-			$this->do_the_math($e->entid,$in['cat_1'],$in['amount'],$e->purchase_date,0);
-			
-
 			
 			return true;	
 		}
