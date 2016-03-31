@@ -68,8 +68,8 @@ class EntryController extends BaseAppController {
 							'method'=>'POST');
 		return View::make('entry.move',['form_data'=>$form_data,
 										'dates'=>$this->days,	
-										'paid_with'=>$this->all_cats_dd['all_wCC'],
-										'cats_dd'=>$this->all_cats_dd['all_wCC']
+										'paid_with'=>$this->all_cats_dd[20], 
+										'cats_dd'=>$this->all_cats_dd[20]
 										]);
 		
 	}
@@ -355,7 +355,7 @@ class EntryController extends BaseAppController {
 			$uc->save();
 			unset($uc);
 
-			// We save the where it came from details
+			// We save the "where it came from" details
 			$this->save_entry_section($in['cat_1'],$e->entid,1,$in['amount']);
 			
 			return true;	
@@ -372,48 +372,35 @@ class EntryController extends BaseAppController {
 			$e->type = $type;
 			$e->save();
 
+			$uc = User_category::find($e->paid_to);
+			$uc->saved = $uc->saved + $e->total_amount;
+			$uc->save();
+			unset($uc);
+			//$this->save_entry_section($in['cat_1'],$e->entid,2,$in['amount']);
+			// Now we reduce amount where it came from, taking into account
+			// if it could all come out of saved or not.
+			$uc = User_category::find($in['cat_1']);
 
+			// It's only ever std categories, so simpler logic.
+			if($uc->saved >= $in['amount']) {
+				// can take it all out of savings
+				$this->save_entry_section($in['cat_1'],$e->entid,2,$in['amount']);
+				$uc->saved = $uc->saved - $in['amount'];
+			} else {
+				// we need to split it up between balance and saved
+				$this->save_entry_section($in['cat_1'],$e->entid,2,$uc->saved);
+				$from_balance = $in['amount'] - $uc->saved;
+				$this->save_entry_section($in['cat_1'],$e->entid,1,$from_balance);
+				$uc->balance = $uc->balance + $from_balance;
+			}
 
-			$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,1,1);
-
-			// Reduce the From by the amount
-			$this->save_entry_section($in['cat_1'],$e->entid,2,$in['amount']);
-			// now we do math
-			$this->do_the_math($e->entid,$in['cat_1'],$in['amount'],$e->purchase_date,0,1);
-			
-
-			
+			$uc->save();
+			unset($uc);
+			//TODO TEST THIS PART TIMH 03/31/16
 			return true;	
 		}
 		
 	}
-
-	/*
-	USE CASES:
-	!! first need to make sure entry happened in current month.
-	* user buys food, cc, from food uc.
-		* food balance incremented by amt.
-		* if food has savings, subtract from that.
-			* if reserved greater than amt, just subtract.
-			* elif reserved less than amt, set reserved to 0
-		* cc incremented by amt
-	* User goes to costco, spends 100 on debit, 80 food 20 fun.
-		* 100 subtracted from bank balance
-		* 80 added to food balance
-		* if food has savings, subtract from that.
-			* if reserved greater than amt, just subtract.
-			* elif reserved less than amt, set reserved to 0
-		* 20 added to fun balance
-		* if fun has savings, subtract from that.
-			* if reserved greater than amt, just subtract.
-			* elif reserved less than amt, set reserved to 0
-	* User goes to candy store, spends 4 cash from food
-		* 4 added to food balance
-		* if food has savings, subtract from that.
-			* if reserved greater than amt, just subtract.
-			* elif reserved less than amt, set reserved to 0
-
-	*/
 
 	private function save_entry_section($ucid,$entid,$paid_from,$amount)
 	{
