@@ -390,13 +390,13 @@ class EntryController extends BaseAppController {
 				// we need to split it up between balance and saved
 				$this->save_entry_section($in['cat_1'],$e->entid,2,$uc->saved);
 				$from_balance = $in['amount'] - $uc->saved;
+				$uc->saved = 0; // Because it was all used.
 				$this->save_entry_section($in['cat_1'],$e->entid,1,$from_balance);
 				$uc->balance = $uc->balance + $from_balance;
 			}
 
 			$uc->save();
 			unset($uc);
-			//TODO TEST THIS PART TIMH 03/31/16
 			return true;	
 		}
 		
