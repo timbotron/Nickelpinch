@@ -68,31 +68,8 @@ class EntryController extends BaseAppController {
 							'method'=>'POST');
 		return View::make('entry.move',['form_data'=>$form_data,
 										'dates'=>$this->days,	
-										'paid_with'=>$this->all_cats_dd['all_wCC'],
-										'cats_dd'=>$this->all_cats_dd['all_wCC']
-										]);
-		
-	}
-
-	/**
-	 * Show the form for saving money to a savings category
-	 *
-	 * @return Response
-	 */
-	public function save($target = 0)
-	{
-		
-		View::share('chosen_page','none');
-		$form_data = array('url' => 'api/new_entry/20',
-							'class'=>'form well ajax-me',
-							'data-id'=>'entry',
-							'data-target'=>'/home',
-							'autocomplete'=>'off',
-							'method'=>'POST');
-		return View::make('entry.save',['form_data'=>$form_data,
-										'target_cat'=>$target,
-										'dates'=>$this->days,	
-										'cats_dd'=>$this->all_cats_dd[30]
+										'paid_with'=>$this->all_cats_dd[20], 
+										'cats_dd'=>$this->all_cats_dd[20]
 										]);
 		
 	}
@@ -200,16 +177,7 @@ class EntryController extends BaseAppController {
 			}
 
 		}
-		elseif($type==20) // savings entry
-		{
-			$rules = [
-					'amount' 	=> 'required|numeric',
-					'date'		=> 'required|date',
-					'cat_1' 	=> 'required|numeric'
-				];
-			
-		}
-		elseif($type==70) // deposit or withdraw entry
+		elseif($type==70 || $type==80) // deposit or withdraw entry
 		{
 			$rules = [
 					'the_class'		=> 'required|numeric',
@@ -269,6 +237,12 @@ class EntryController extends BaseAppController {
 
 	}
 
+	private function spent_from_uc($ucid,$amount) {
+		$uc = User_category::find($ucid);
+		$uc->balance = $uc->balance + $amount;
+		$uc->save();
+	}
+
 	private function save_entry($in,$type=10)
 	{
 		if($type==10) // new entry
@@ -283,25 +257,20 @@ class EntryController extends BaseAppController {
 			$e->type = $type;
 			$e->save();
 
-			// now we add that amt to the paid_to
+			// Now we alter the user category amounts to reflect the entry
 
-			// $entid,$ucid,$total,$date,$is_add,
+			// First, lets alter amounts for where the money is going TO
+			$uc = User_category::find($e->paid_to);
 
-			if($in['paid_to'] > 1)
-			{
-				// means its going to a uc
-				$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,1);
+			if($uc->class == 8) { // Is Bank Account
+				$uc->balance = $uc->balance - $e->total_amount;
+			} elseif($uc->class == 10) { // Is CC
+				$uc->balance = $uc->balance + $e->total_amount;
 			}
-			else
-			{
-				// means it was paid to debit/check
-				$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,0);
-			}
+			$uc->save();
+			unset($uc);
 
-			//Then we update the uc total
-
-
-			// now we save the entry_section(s)
+			// Now, lets alter amounts for where the money is coming FROM
 			// is this a multi-cat purchase?
 			if(isset($in['using_multi_cats']))
 			{
@@ -310,36 +279,18 @@ class EntryController extends BaseAppController {
 				{
 					if($in['cat_'.$i]!='0')
 					{
-						// now we do math
-						$this->do_the_math($e->entid,$in['cat_'.$i],$in['cat_'.$i.'_val'],$e->purchase_date,0);
+						$this->spent_from_uc($in['cat_'.$i],$in['cat_'.$i.'_val']);
+						$this->save_entry_section($in['cat_'.$i],$e->entid,2,$in['cat_'.$i.'_val']);
 					}
 				}
 			}
 			else
 			{
 				// single
-				// now we do math
-				$this->do_the_math($e->entid,$in['cat_1'],$in['amount'],$e->purchase_date,0);
-
-				
+				$this->spent_from_uc($in['cat_1'],$in['amount']);
+				$this->save_entry_section($in['cat_1'],$e->entid,2,$in['amount']);
 			}
 		return true;	
-		}
-		elseif($type==20) // to savings
-		{
-			// first we save the entry
-			$e = new Entry;
-			$e->uid = $this->user->uid;
-			$e->paid_to = $in['cat_1'];
-			$e->purchase_date = $in['date'];
-			$e->total_amount = $in['amount'];
-			$e->description = $in['description'];
-			$e->type = $type;
-			$e->save();
-
-			$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,1,0,0,2,$type);
-
-			return true;	
 		}
 		elseif($type==70 || $type == 80) // deposit / withdraw
 		{
@@ -353,18 +304,19 @@ class EntryController extends BaseAppController {
 			$e->description = $in['description'];
 			$e->type = $type;
 			$e->save();
+				
+			$uc = User_category::find($this->bank_info['ucid']);
+			if($in['the_class'] == 70) {
+				$uc->balance = $uc->balance + $e->total_amount;
+			} else {
+				$uc->balance = $uc->balance - $e->total_amount;
 
-			$dep_or_with = 0;
-			if($in['the_class'] == 70)
-			{
-				$dep_or_with = 1;
 			}
-
-
-			$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,$dep_or_with);
+			$uc->save();
+			unset($uc);
 
 			// if this is a withdraw, we need to reduce the uc it came from so need an entry_section
-			if($e->paid_to==0 && ($this->bank_info['ucid'] != $in['cat_1']))
+			if($in['the_class'] == 80 && ($this->bank_info['ucid'] != $in['cat_1']))
 			{
 				$es = new Entry_section;
 				$es->ucid = $in['cat_1'];
@@ -373,7 +325,7 @@ class EntryController extends BaseAppController {
 				$es->save();
 
 				// now we do math
-				$this->do_the_math($e->entid,$es->ucid,$es->amount,$e->purchase_date,0);
+				$this->spent_from_uc($es->ucid,$es->amount);
 			}
 
 			
@@ -391,15 +343,20 @@ class EntryController extends BaseAppController {
 			$e->type = $type;
 			$e->save();
 
+			// reduce balance on CC
+			$uc = User_category::find($this->bank_info['ucid']);
+			$uc->balance = $uc->balance - $e->total_amount;
+			$uc->save();
+			unset($uc);
 
-			$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,0);
+			// reduce balance on bank
+			$uc = User_category::find($in['cat_1']);
+			$uc->balance = $uc->balance - $e->total_amount;
+			$uc->save();
+			unset($uc);
 
-			// Reduce the CC balance by the amount
+			// We save the "where it came from" details
 			$this->save_entry_section($in['cat_1'],$e->entid,1,$in['amount']);
-			// now we do math
-			$this->do_the_math($e->entid,$in['cat_1'],$in['amount'],$e->purchase_date,0);
-			
-
 			
 			return true;	
 		}
@@ -415,48 +372,35 @@ class EntryController extends BaseAppController {
 			$e->type = $type;
 			$e->save();
 
+			$uc = User_category::find($e->paid_to);
+			$uc->saved = $uc->saved + $e->total_amount;
+			$uc->save();
+			unset($uc);
+			//$this->save_entry_section($in['cat_1'],$e->entid,2,$in['amount']);
+			// Now we reduce amount where it came from, taking into account
+			// if it could all come out of saved or not.
+			$uc = User_category::find($in['cat_1']);
 
+			// It's only ever std categories, so simpler logic.
+			if($uc->saved >= $in['amount']) {
+				// can take it all out of savings
+				$this->save_entry_section($in['cat_1'],$e->entid,2,$in['amount']);
+				$uc->saved = $uc->saved - $in['amount'];
+			} else {
+				// we need to split it up between balance and saved
+				$this->save_entry_section($in['cat_1'],$e->entid,2,$uc->saved);
+				$from_balance = $in['amount'] - $uc->saved;
+				$uc->saved = 0; // Because it was all used.
+				$this->save_entry_section($in['cat_1'],$e->entid,1,$from_balance);
+				$uc->balance = $uc->balance + $from_balance;
+			}
 
-			$this->do_the_math($e->entid,$e->paid_to,$e->total_amount,$e->purchase_date,1,1);
-
-			// Reduce the From by the amount
-			$this->save_entry_section($in['cat_1'],$e->entid,2,$in['amount']);
-			// now we do math
-			$this->do_the_math($e->entid,$in['cat_1'],$in['amount'],$e->purchase_date,0,1);
-			
-
-			
+			$uc->save();
+			unset($uc);
 			return true;	
 		}
 		
 	}
-
-	/*
-	USE CASES:
-	!! first need to make sure entry happened in current month.
-	* user buys food, cc, from food uc.
-		* food balance incremented by amt.
-		* if food has savings, subtract from that.
-			* if reserved greater than amt, just subtract.
-			* elif reserved less than amt, set reserved to 0
-		* cc incremented by amt
-	* User goes to costco, spends 100 on debit, 80 food 20 fun.
-		* 100 subtracted from bank balance
-		* 80 added to food balance
-		* if food has savings, subtract from that.
-			* if reserved greater than amt, just subtract.
-			* elif reserved less than amt, set reserved to 0
-		* 20 added to fun balance
-		* if fun has savings, subtract from that.
-			* if reserved greater than amt, just subtract.
-			* elif reserved less than amt, set reserved to 0
-	* User goes to candy store, spends 4 cash from food
-		* 4 added to food balance
-		* if food has savings, subtract from that.
-			* if reserved greater than amt, just subtract.
-			* elif reserved less than amt, set reserved to 0
-
-	*/
 
 	private function save_entry_section($ucid,$entid,$paid_from,$amount)
 	{
@@ -467,137 +411,6 @@ class EntryController extends BaseAppController {
 		$es->amount = $amount;
 		$es->save();
 	}
-
-	private function do_the_math($entid,$ucid,$total,$date,$is_add,$is_move=0,$is_delete=0,$paid_from=0,$entry_type=0)
-	{
-		if($ucid>1)
-		{
-			$uc = User_category::find($ucid);
-
-			if($is_add)
-			{
-				switch ($uc->class) 
-				{
-					case 8:
-					case 10:
-						// Is a CC or Bank Account
-						$uc->balance = $uc->balance + $total;
-						break;
-					case 20:
-						// Is a normal acct
-						if(!$is_delete) $uc->saved = $uc->saved + $total;
-						else // is delete
-						{
-							// means its in same month; we need to actually reduce the balance
-							if(date('m-Y') == date('m-Y',strtotime($date)))
-							{
-								$uc->balance = $uc->balance - $total;
-							}
-							else
-							{
-								$uc->saved = $uc->saved + $total;
-							}
-						}
-						
-						break;
-					case 30:
-					case 40:
-						// Is a savings or external savings
-						$uc->saved = $uc->saved + $total;
-
-						//is in current month?
-						if(date('m-Y') == date('m-Y',strtotime($date))) {
-							if($entry_type == 20) { // its a move
-								if($is_delete) {
-									$uc->balance = $uc->balance - $total;
-								}
-								else {
-									$uc->balance = $uc->balance + $total;
-								}
-							}
-
-							
-						}
-						break;
-				}
-				
-			}
-			else
-			{
-				switch ($uc->class) 
-				{
-					case 8:
-					case 10:
-						// Is a CC or Bank Account
-						$uc->balance = $uc->balance - $total;
-						break;
-					case 20:
-						// Is a normal acct
-						if($is_delete) {
-							// wil lhappen
-						}
-						else {
-							$this->save_entry_section($ucid,$entid,2,$total);
-							if((date('m-Y') == date('m-Y',strtotime($date)))) {
-								$uc->balance = $uc->balance + $total;
-							}
-
-						}
-						
-						break;
-					case 30:
-					case 40:
-						// Is a savings or external savings
-						if($uc->saved>0)
-						{
-							if($uc->saved>=$total)
-							{
-								$uc->saved = $uc->saved - $total;
-
-							}
-							else 
-							{
-								$uc->saved  = 0.00;
-							}
-							if(!$is_delete) $this->save_entry_section($ucid,$entid,1,$total);
-						}
-						if(date('m-Y') == date('m-Y',strtotime($date))) {
-							$uc->balance = $uc->balance - $total;
-						}
-						break;
-				}
-			}
-			$uc->save();
-		}
-		else
-		{
-			// means someone bought something with debit/cash or a withdraw
-			if($ucid==0)
-			{
-				$uc = User_category::find($this->bank_info['ucid']);
-
-				if($is_add)
-				{
-					$uc->balance = $uc->balance + $total;
-					$uc->save();
-				}
-				else
-				{
-					// means debit / check / withdraw, so need to reduce the bank balance
-					
-					$uc->balance = $uc->balance - $total;
-					$uc->save();
-				}
-				
-			}
-			
-		}
-
-		
-		
-
-	}
-
 
 	/**
 	 * Display the specified resource.
@@ -638,30 +451,6 @@ class EntryController extends BaseAppController {
 
 
 	/**
-	 * Show the form for editing the specified resource.
-	 *
-	 * @param  int  $id
-	 * @return Response
-	 */
-	public function edit($id)
-	{
-		//
-	}
-
-
-	/**
-	 * Update the specified resource in storage.
-	 *
-	 * @param  int  $id
-	 * @return Response
-	 */
-	public function update($id)
-	{
-		//
-	}
-
-
-	/**
 	 * Remove the specified resource from storage.
 	 *
 	 * @param  int  $id
@@ -681,50 +470,68 @@ class EntryController extends BaseAppController {
 
 		//dd($entry[0]);
 
+		// delete the entry and entry sections
 		if(Entry::delete_entry($id))
 		{
-			if($entry[0]->type==100)
-			{
-				// SPECIAL CASE; deleting a monthly reset.
-				$tmp = [];
-				foreach($entry[0]->section as $es)
-				{
-					$tmp['balance'] = $es->amount;
-					DB::table('user_categories')->where('ucid',$es->ucid)->update($tmp);
+			// now we need to reverse the math on those categories so the balance 
+			// and savings are what they were before.
+
+			// first lets fix where the money went TO
+			if($entry[0]->paid_to > 0) {
+				$uc = User_category::find($entry[0]->paid_to);
+			} else {
+				$uc = User_category::find($this->bank_info['ucid']);
+			}
+
+			$tmp = [];
+			if($entry[0]->type == 10) { // standard entry
+				if($uc->class == 8) { // bank account
+					$uc->balance = $uc->balance + $entry[0]->total_amount;
+				} elseif($uc->class == 10) { // credit card
+					$uc->balance = $uc->balance - $entry[0]->total_amount;
 				}
-				return Response::json(array('success' => true), 200); 
-
+			} elseif($entry[0]->type == 40) { // move entry
+				$uc->saved = $uc->saved - $entry[0]->total_amount;
+			} elseif($entry[0]->type == 50) { // cc payment
+				$uc->balance = $uc->balance + $entry[0]->total_amount;
+			} elseif($entry[0]->type == 70) { // deposit
+				$uc->balance = $uc->balance - $entry[0]->total_amount;
+			} elseif($entry[0]->type == 80) { // withdraw
+				$uc->balance = $uc->balance + $entry[0]->total_amount;
 			}
-			// first do reverse math on entry
-			// fun stuff; if its a cc entry we're reversing, gotta be funky because I am a moron and did the
-			// stupid ucid = 0 for everyones bank instead of just having an extra row for each user.
-			$is_add = 0;
-			if($entry[0]->type==50 || ($entry[0]->type==10 && $entry[0]->paid_to==0))
-			{
-				$is_add = 1;
-			}
-			$this->do_the_math(
-								$id,
-								$entry[0]->paid_to,
-								$entry[0]->total_amount,
-								$entry[0]->purchase_date,
-								$is_add,
-								0,
-								1); 
 
-			// Then for each entry section
-			foreach($entry[0]->section as $es)
-			{
-				$this->do_the_math(			// TODO need to deal with deleting if its from savings, want to add to saved but thats it
-									$id,
-									$es->ucid,
-									$es->amount,
-									$entry[0]->purchase_date,
-									1,
-									0,
-									1,
-									$es->paid_from,
-									$entry[0]->type); 
+			// NOTE: if type == 100, we don't need to revert and paid_to because 
+			// their was none.
+			$uc->save();
+			unset($uc);
+
+			// Ok, now lets fix where the money came FROM
+			foreach($entry[0]->section as $es) {
+
+				if($es->ucid > 0) {
+					$uc = User_category::find($es->ucid);
+				} else {
+					$uc = User_category::find($this->bank_info['ucid']);
+				}
+
+				if($entry[0]->type==100) { // monthly reset.
+					$uc->balance = $es->amount;
+				} elseif($entry[0]->type == 10) { // standard entry
+					$uc->balance = $uc->balance - $es->amount;
+				} elseif($entry[0]->type == 40) { // move entry
+					if($es->paid_from == 1) { // it came from savings
+						$uc->saved = $uc->saved + $es->amount;
+					} else { // it came from balance
+						$uc->balance = $uc->balance - $es->amount;
+					}
+				} elseif($entry[0]->type == 50) { // cc payment
+					$uc->balance = $uc->balance + $es->amount;
+				} elseif($entry[0]->type == 80) { // withdraw TODO TIMH keep checking
+					$uc->balance = $uc->balance + $entry[0]->total_amount;
+				}
+
+				$uc->save();
+				unset($uc);
 
 			}
 			return Response::json(array('success' => true), 200); 

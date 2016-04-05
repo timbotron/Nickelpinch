@@ -11,8 +11,8 @@
             	<table class="table table-condensed">
 	              	<tbody>
 	              		@foreach($user_data->user_categories as $cat)
-	              		@if(in_array($cat->class,[20,30]))
-	              		<tr {{ $cat->class==30 ? 'class="success"' : '' }}>
+	              		@if(in_array($cat->class,[20]))
+	              		<tr>
 		                	<td>
 		                		<a href="/history/{{ $cat->ucid }}">{{ $cat->category_name }}</a><br>
 		                		<span class="{{ $cat->color }}">{{ $currency.number_format($cat->balance,2,'.','') }} / {{ $currency.number_format($cat->top_limit + $cat->saved,2,'.','') }}</span>
@@ -24,7 +24,7 @@
 		                		@endif
 		                	</td>
 		                	<td class="vert-align">
-		                		<span class="pull-right"><a href="/{{ $cat->class==30 ? 'save' : 'add' }}/{{ $cat->ucid }}" class="btn btn-primary"><span class="glyphicon glyphicon-{{ $cat->class==30 ? 'leaf' : 'plus' }}"></span></a></span>
+		                		<span class="pull-right"><a href="/{{ $cat->class==30 ? 'save' : 'add' }}/{{ $cat->ucid }}" class="btn btn-primary"><span class="glyphicon glyphicon-plus"></span></a></span>
 		                	</td>
 		                </tr>
 	              		@endif

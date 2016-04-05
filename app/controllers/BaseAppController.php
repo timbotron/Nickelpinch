@@ -138,35 +138,36 @@ class BaseAppController extends Controller {
 	public function make_paid_via()
 	{
 		$ret = array();
-
-		$ret = array(	0=>'Debit Card / Check',
-						1=>'Cash');
 		foreach($this->user->user_categories as $c)
 		{
-			if($c->class==10) $ret[(int)$c->ucid] = $c->category_name;
+			if($c->class == 10) {
+				$ret[(int)$c->ucid] = $c->category_name;	
+			} elseif($c->class == 8) {
+				$ret[(int)$c->ucid] = $c->category_name . " Debit Card / Check";	
+			}
 		}
 
 		return $ret;
 	}
 
-	public function make_all_cats()
+	public function make_all_cats() 
 	{
 		$classes = array('history','all_wCC','all',10,20,30);
 		$returnme = array();
 		foreach($classes as $class)
 		{
 			$ret = array();
-			if($class=='all_wCC') $ret[0] = $this->bank_info['name'];
-			elseif($class=='history')
+			if($class=='all') $ret[0] = 'Choose..';
+			if($class=='all_wCC') $ret[(int)$this->bank_info['ucid']] = $this->bank_info['name'];
+			if($class=='history')
 			{
 				$ret['type:70'] = 'Deposits';
 				$ret['type:80'] = 'Withdraws';
 			}
-			else $ret[0] = 'Choose..';
 			foreach($this->user->user_categories as $c)
 			{
 				if($class=='all' && ($c->class==20 || $c->class==30)) $ret[(int)$c->ucid] = $c->category_name;
-				elseif(in_array($class,array('all_wCC','history')) && (in_array($c->class, array(10,20,30)))) $ret[(int)$c->ucid] = $c->category_name;
+				elseif(in_array($class,array('all_wCC','history')) && (in_array($c->class, array(8,10,20,30)))) $ret[(int)$c->ucid] = $c->category_name;
 				elseif($c->class==$class) $ret[(int)$c->ucid] = $c->category_name;
 			}
 			$returnme[$class] = $ret;

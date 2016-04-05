@@ -17,21 +17,21 @@
 					{{ Form::label('top_limit', 'Monthly Spending Limit'); }}
 					<div class="input-group">
   						<span class="input-group-addon">{{ $currency }}</span> 
-						{{ Form::input('number','top_limit',$uc->top_limit,array('class'=>'form-control')) }}
+						{{ Form::input('number','top_limit',$uc->top_limit,array('class'=>'form-control','step'=>'any')) }}
 					</div>
 				</div>
 				<div class="form-group">
 					{{ Form::label('balance', 'Current Balance'); }}
 					<div class="input-group">
   						<span class="input-group-addon">{{ $currency }}</span> 
-						{{ Form::input('number','balance',$uc->balance,array('class'=>'form-control')) }}
+						{{ Form::input('number','balance',$uc->balance,array('class'=>'form-control','step'=>'any')) }}
 					</div>
 				</div>
 				<div class="form-group">
 					{{ Form::label('saved', 'Amount Saved'); }}
 					<div class="input-group">
   						<span class="input-group-addon">{{ $currency }}</span> 
-						{{ Form::input('number','saved',$uc->saved,array('class'=>'form-control')) }}
+						{{ Form::input('number','saved',$uc->saved,array('class'=>'form-control','step'=>'any')) }}
 					</div>
 				</div>
 				<div class="form-group">
@@ -60,21 +60,5 @@
 
 		{{ Form::close() }}
 		<div class="clearme"></div>
-		@if($uc->class==30)
-			{{ Form::open(['url' => 'budget/convert_savings','class'=>'form well','autocomplete'=>'off','method'=>'POST']) }}
-			<fieldset>
-				<legend>Convert {{ $nikl_config['uc_class_def'][$uc->class]}} Category</legend>
-				<div class="alert alert-info">
-					If this savings category is ready to be spent from, convert it here!
-				</div>
-				{{ Form::hidden('ucid',$uc->ucid) }}
-
-				{{-- Form submit button. --------------------}}
-				{{ Form::submit('Convert Category',['class'=>'btn btn-primary']) }}
-				<a href="/budget" class="btn btn-default">Cancel</a>
-
-			</fieldset>
-			{{ Form::close() }}
-		@endif
 	</div>
 </div>
