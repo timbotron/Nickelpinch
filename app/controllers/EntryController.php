@@ -543,30 +543,6 @@ class EntryController extends BaseAppController {
 
 
 	/**
-	 * Show the form for editing the specified resource.
-	 *
-	 * @param  int  $id
-	 * @return Response
-	 */
-	public function edit($id)
-	{
-		//
-	}
-
-
-	/**
-	 * Update the specified resource in storage.
-	 *
-	 * @param  int  $id
-	 * @return Response
-	 */
-	public function update($id)
-	{
-		//
-	}
-
-
-	/**
 	 * Remove the specified resource from storage.
 	 *
 	 * @param  int  $id
@@ -586,52 +562,109 @@ class EntryController extends BaseAppController {
 
 		//dd($entry[0]);
 
+		// delete the entry and entry sections
 		if(Entry::delete_entry($id))
 		{
-			if($entry[0]->type==100)
-			{
-				// SPECIAL CASE; deleting a monthly reset.
-				$tmp = [];
-				foreach($entry[0]->section as $es)
-				{
-					$tmp['balance'] = $es->amount;
-					DB::table('user_categories')->where('ucid',$es->ucid)->update($tmp);
+			// now we need to reverse the math on those categories so the balance 
+			// and savings are what they were before.
+
+			// first lets fix where the money went TO
+			if($entry[0]->paid_to > 0) {
+				$uc = User_category::find($entry[0]->paid_to);
+			} else {
+				$uc = User_category::find($this->bank_info['ucid']);
+			}
+
+			$tmp = [];
+			if($entry[0]->type == 10) { // standard entry
+				if($uc->class == 8) { // bank account
+					$uc->balance = $uc->balance + $entry[0]->total_amount;
+				} elseif($uc->class == 10) { // credit card
+					$uc->balance = $uc->balance - $entry[0]->total_amount;
 				}
-				return Response::json(array('success' => true), 200); 
+			} elseif($entry[0]->type == 40) { // move entry
+				$uc->saved = $uc->saved - $entry[0]->total_amount;
+			} elseif($entry[0]->type == 50) { // cc payment
+				$uc->balance = $uc->balance + $entry[0]->total_amount;
+			} elseif($entry[0]->type == 70) { // deposit
+				$uc->balance = $uc->balance - $entry[0]->total_amount;
+			} elseif($entry[0]->type == 80) { // withdraw
+				$uc->balance = $uc->balance + $entry[0]->total_amount;
+			}
+
+			// NOTE: if type == 100, we don't need to revert and paid_to because 
+			// their was none.
+			$uc->save();
+			unset($uc);
+
+			// Ok, now lets fix where the money came FROM
+			foreach($entry[0]->section as $es) {
+
+				if($es->ucid > 0) {
+					$uc = User_category::find($es->ucid);
+				} else {
+					$uc = User_category::find($this->bank_info['ucid']);
+				}
+
+				if($entry[0]->type==100) { // monthly reset.
+					$uc->balance = $es->amount;
+				} elseif($entry[0]->type == 10) { // standard entry
+					$uc->balance = $uc->balance - $es->amount;
+				} elseif($entry[0]->type == 40) { // move entry
+					if($es->paid_from == 1) { // it came from savings
+						$uc->saved = $uc->saved + $es->amount;
+					} else { // it came from balance
+						$uc->balance = $uc->balance - $es->amount;
+					}
+				} elseif($entry[0]->type == 50) { // cc payment
+					$uc->balance = $uc->balance + $es->amount;
+				} elseif($entry[0]->type == 80) { // withdraw TODO TIMH keep checking
+					$uc->balance = $uc->balance + $entry[0]->total_amount;
+				}
+
+				$uc->save();
+				unset($uc);
 
 			}
-			// first do reverse math on entry
-			// fun stuff; if its a cc entry we're reversing, gotta be funky because I am a moron and did the
-			// stupid ucid = 0 for everyones bank instead of just having an extra row for each user.
-			$is_add = 0;
-			if($entry[0]->type==50 || ($entry[0]->type==10 && $entry[0]->paid_to==0))
-			{
-				$is_add = 1;
-			}
-			$this->do_the_math(
-								$id,
-								$entry[0]->paid_to,
-								$entry[0]->total_amount,
-								$entry[0]->purchase_date,
-								$is_add,
-								0,
-								1); 
 
-			// Then for each entry section
-			foreach($entry[0]->section as $es)
-			{
-				$this->do_the_math(			// TODO need to deal with deleting if its from savings, want to add to saved but thats it
-									$id,
-									$es->ucid,
-									$es->amount,
-									$entry[0]->purchase_date,
-									1,
-									0,
-									1,
-									$es->paid_from,
-									$entry[0]->type); 
+			//return Response::json(array('success' => true), 200); 
+			// } else {
+				// first do reverse math on entry
 
-			}
+				
+
+				// fun stuff; if its a cc entry we're reversing, gotta be funky because I am a moron and did the
+				// stupid ucid = 0 for everyones bank instead of just having an extra row for each user.
+				// $is_add = 0;
+				// if($entry[0]->type==50 || ($entry[0]->type==10 && $entry[0]->paid_to==0))
+				// {
+				// 	$is_add = 1;
+				// }
+				// $this->do_the_math(
+				// 					$id,
+				// 					$entry[0]->paid_to,
+				// 					$entry[0]->total_amount,
+				// 					$entry[0]->purchase_date,
+				// 					$is_add,
+				// 					0,
+				// 					1); 
+
+				// // Then for each entry section
+				// foreach($entry[0]->section as $es)
+				// {
+				// 	$this->do_the_math(			// TODO need to deal with deleting if its from savings, want to add to saved but thats it
+				// 						$id,
+				// 						$es->ucid,
+				// 						$es->amount,
+				// 						$entry[0]->purchase_date,
+				// 						1,
+				// 						0,
+				// 						1,
+				// 						$es->paid_from,
+				// 						$entry[0]->type); 
+
+				// }
+			//}
 			return Response::json(array('success' => true), 200); 
 		}
 		else
