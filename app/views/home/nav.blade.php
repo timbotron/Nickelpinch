@@ -6,6 +6,11 @@
           </button>
           <a href="/" class="navbar-brand">Nickelpinch</a>
         </div>
+        <ul class="nav navbar-nav visible-xs-block">
+            <li {{ $chosen_page=='home' ? 'class="active"' : '' }}>
+              <a href="/home"><span class="glyphicon glyphicon-home"></span> Overview</a>
+            </li>
+        </ul>
         <div class="collapse navbar-collapse">
           <ul class="nav navbar-nav navbar-right">
             <li {{ $chosen_page=='home' ? 'class="active"' : '' }}>
