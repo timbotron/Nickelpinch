@@ -430,16 +430,17 @@ class EntryController extends BaseAppController {
 		}
 		else
 		{
-			foreach($entry as &$e)
+			foreach($entry as &$e)  // TIMH TODO figure out why withdraws still show debit/credit
 			{
 				// gotta make data nicer
-				if($e['paid_to']==0) $e['paid_to'] = 'Debit/Credit';
+				if($e['paid_to']==0 && in_array($e['type'], [70,80])) $e['paid_to'] = $this->bank_info['name'];
+				elseif($e['paid_to'] == $this->bank_info['ucid'] && $e['type'] == 10) $e['paid_to'] = $this->bank_info['name'] . ' Debit/Credit';
 				else $e['paid_to'] = $this->uc_array[$e['paid_to']];
 				$e['purchase_date'] = date('M j, Y',strtotime($e['purchase_date']));
 				$e['type'] = $this->nikl_config['entry_types'][$e['type']];
 				foreach($e['section'] as &$s)
 				{
-					if($s['ucid']==0) $s['ucid'] = 'Debit/Check';
+					if($s['ucid']==0) $s['ucid'] = 'Debit/Credit';
 					else $s['ucid'] = $this->uc_array[$s['ucid']];
 				}
 			}
@@ -467,8 +468,6 @@ class EntryController extends BaseAppController {
 		{
 			return Response::json(array('status' => false, 'errors' => array('total'=>'You are not authorized to delete this entry.')), 400);
 		}
-
-		//dd($entry[0]);
 
 		// delete the entry and entry sections
 		if(Entry::delete_entry($id))

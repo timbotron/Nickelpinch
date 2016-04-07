@@ -31,7 +31,7 @@
 				@if($history)
 				@foreach($history as $h)
 				<tr class="active">
-					<td>{{ $currency . ($target_cat==$h->paid_to ? $h->total_amount : $h->amount) }}</td>
+					<td>{{ $currency . (($target_cat==$h->paid_to || !$h->amount) ? $h->total_amount : $h->amount) }}</td>
 					<td>{{ $nikl_config['entry_types'][$h->type]}}</td>
 					<td>{{ date('M j, Y',strtotime($h->purchase_date)) }}</td>
 					<td>{{ ($target_cat==$h->paid_to ? '<span class="glyphicon glyphicon-chevron-right"></span> ' : '<span class="glyphicon glyphicon-chevron-left"></span> '). $target_name }}</td>

@@ -14,7 +14,10 @@ class HistoryController extends BaseAppController {
 	public function index($target=-1,$range=30)
 	{
 		View::share('chosen_page','history');
-		if($target != -1)	$history = Entry::history_for($target,$range);
+		// lets handle history for specific types of entries
+		if($target != -1) {
+			$history = Entry::history_for($target,$this->user->uid,$range);
+		}
 		else
 		{
 			$history = false;

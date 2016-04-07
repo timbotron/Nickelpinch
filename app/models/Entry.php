@@ -17,14 +17,16 @@ class Entry extends Eloquent {
     {
     	return $this->belongsTo('User','uid','uid');
     }
-    public static function history_for($ucid, $day_range=30)
+    public static function history_for($ucid, $uid, $day_range = 30)
     {
+        //TODO TIMH 04/06 incorporate $entry_type filter and remove this colon bs
+        
         if(strpos($ucid, ':'))
         {
             // means we need to search by type
-            $where = 'entries.type = ?';
+            $where = 'entries.type = ? AND entries.uid = ?';
             $filter = (int)substr($ucid, strpos($ucid, ':')+1);
-            $filter = array($filter,$day_range);
+            $filter = array($filter,$uid,$day_range);
         }
         else
         {
