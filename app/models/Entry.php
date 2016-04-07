@@ -41,7 +41,7 @@ class Entry extends Eloquent {
                         entries.description,
                         entries.purchase_date,
                         entries.total_amount,
-                        entry_sections.amount,
+                        SUM(entry_sections.amount) AS amount,
                         entry_sections.ucid
                 FROM entries
                 LEFT JOIN entry_sections ON entries.entid=entry_sections.entid

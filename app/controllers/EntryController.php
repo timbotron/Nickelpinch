@@ -434,13 +434,13 @@ class EntryController extends BaseAppController {
 			{
 				// gotta make data nicer
 				if($e['paid_to']==0 && in_array($e['type'], [70,80])) $e['paid_to'] = $this->bank_info['name'];
-				elseif($e['paid_to'] == $this->bank_info['ucid'] && $e['type'] == 10) $e['paid_to'] = $this->bank_info['name'] . ' Debit/Credit';
+				elseif($e['paid_to'] == $this->bank_info['ucid'] && $e['type'] == 10) $e['paid_to'] = $this->bank_info['name'] . ' Debit/Check';
 				else $e['paid_to'] = $this->uc_array[$e['paid_to']];
 				$e['purchase_date'] = date('M j, Y',strtotime($e['purchase_date']));
 				$e['type'] = $this->nikl_config['entry_types'][$e['type']];
 				foreach($e['section'] as &$s)
 				{
-					if($s['ucid']==0) $s['ucid'] = 'Debit/Credit';
+					if($s['ucid']==0) $s['ucid'] = 'Debit/Check';
 					else $s['ucid'] = $this->uc_array[$s['ucid']];
 				}
 			}
