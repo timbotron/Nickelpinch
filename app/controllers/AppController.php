@@ -13,8 +13,14 @@ class AppController extends BaseAppController {
 	{
 		if($this->_is_new()) return Redirect::to('welcome');
 
+		if(Cookie::has('default_view')) {
+			$layout = Cookie::get('default_view');
+		} else {
+			$layout = 'simple';
+		}
+
 		View::share('chosen_page','home');
-		return View::make('app.main');
+		return View::make('app.main',['layout'=>$layout]);
 	}
 
 	public function settings()
@@ -26,8 +32,18 @@ class AppController extends BaseAppController {
 							'data-target'=>'/home',
 							'autocomplete'=>'off',
 							'method'=>'POST');
-		return View::make('app.settings',['form1_data'=>$form1_data,
-										'paid_with'=>$this->make_paid_via()
+		$form2_data = array('url' => 'api/save_default_view',
+							'class'=>'form well ajax-me',
+							'data-id'=>'default_view',
+							'data-target'=>'/home',
+							'autocomplete'=>'off',
+							'method'=>'POST');
+		$overview_detail_options = ['simple'=>'Simple View',
+									'detailed'=>'Detailed View'];
+		return View::make('app.settings',['form1_data' => $form1_data,
+										'form2_data' => $form2_data,
+										'paid_with' => $this->make_paid_via(),
+										'view_opts' => $overview_detail_options
 										]);
 	}
 
@@ -44,6 +60,27 @@ class AppController extends BaseAppController {
 			// Gotta store user
 			$this->user->default_pmt_method = Input::get('chosen_default_pmt');
 			$this->user->save();
+
+			return Response::json(array('success' => true), 200);
+		}
+		else
+		{
+			return Response::json(array('status' => false, 'errors' => array('total'=>'There was a problem saving this change.')), 400);
+		}
+	}
+
+		public function save_default_view()
+	{
+		$rules = [
+					'chosen_default_view' 		=> 'required'
+		];
+
+		$validator = Validator::make(Input::all(), $rules);
+
+		if($validator->passes())
+		{
+			// Gotta update cookie to use chosen default view TODO timh 05/17
+			Cookie::forever('default_view',Input::get('chosen_default_view'));
 
 			return Response::json(array('success' => true), 200);
 		}
