@@ -80,9 +80,8 @@ class AppController extends BaseAppController {
 		if($validator->passes())
 		{
 			// Gotta update cookie to use chosen default view TODO timh 05/17
-			Cookie::forever('default_view',Input::get('chosen_default_view'));
-
-			return Response::json(array('success' => true), 200);
+			$cookie = Cookie::make('default_view',Input::get('chosen_default_view'),2628000);
+			return Response::json(array('success' => true), 200)->withCookie($cookie);
 		}
 		else
 		{
