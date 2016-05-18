@@ -13,18 +13,24 @@
 	              		@foreach($user_data->user_categories as $cat)
 	              		@if(in_array($cat->class,[20]))
 	              		<tr>
-		                	<td>
-		                		<a href="/history/{{ $cat->ucid }}">{{ $cat->category_name }}</a><br>
-		                		<span class="{{ $cat->color }}">{{ $currency.number_format($cat->balance,2,'.','') }} / {{ $currency.number_format($cat->top_limit + $cat->saved,2,'.','') }}</span>
-		                		@if($cat->saved > 0)
+		                	<td {{ ($layout == 'simple' ? 'class="vert-align"' : '') }}>
+		                		<a {{ ($layout == 'simple' ? 'class="btn btn-default btn-block"' : '') }} href="/history/{{ $cat->ucid }}">{{ $cat->category_name }}</a>
+		                		@if($layout == 'detailed')
+		                		<br><span class="{{ $cat->color }}">{{ $currency.number_format($cat->balance,2,'.','') }} / {{ $currency.number_format($cat->top_limit + $cat->saved,2,'.','') }}</span>
+		                		@endif
+		                		@if($cat->saved > 0 && $layout == 'detailed')
 		                		<span class="label {{ $cat->class == 30 ? 'label-default' : 'label-success' }}">
 		                			<span class="glyphicon {{ $cat->class == 30 ? 'glyphicon-lock' : 'glyphicon-plus' }}"></span> 
 		                			{{ $currency.number_format($cat->saved,2,'.','') }}
 		                		</span>
 		                		@endif
 		                	</td>
-		                	<td class="vert-align">
-		                		<span class="pull-right"><a href="/{{ $cat->class==30 ? 'save' : 'add' }}/{{ $cat->ucid }}" class="btn btn-primary"><span class="glyphicon glyphicon-plus"></span></a></span>
+		                	<td class="vert-align" style="white-space:nowrap;">
+		                		<span class="pull-right">
+		                		@if($layout == 'simple')
+		                		<span style="font-size:14px;" class="{{ $cat->color }}">{{ $currency.number_format(($cat->saved + $cat->top_limit) - $cat->balance,2,'.','') }}</span>
+		                		@endif
+		                		<a href="/{{ $cat->class==30 ? 'save' : 'add' }}/{{ $cat->ucid }}" class="btn btn-primary"><span class="glyphicon glyphicon-plus"></span></a></span>
 		                	</td>
 		                </tr>
 	              		@endif
