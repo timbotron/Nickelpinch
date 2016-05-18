@@ -14,7 +14,7 @@
 	              		@if(in_array($cat->class,[20]))
 	              		<tr>
 		                	<td {{ ($layout == 'simple' ? 'class="vert-align"' : '') }}>
-		                		<a href="/history/{{ $cat->ucid }}">{{ $cat->category_name }}</a>
+		                		<a {{ ($layout == 'simple' ? 'class="btn btn-default btn-block"' : '') }} href="/history/{{ $cat->ucid }}">{{ $cat->category_name }}</a>
 		                		@if($layout == 'detailed')
 		                		<br><span class="{{ $cat->color }}">{{ $currency.number_format($cat->balance,2,'.','') }} / {{ $currency.number_format($cat->top_limit + $cat->saved,2,'.','') }}</span>
 		                		@endif
@@ -25,7 +25,7 @@
 		                		</span>
 		                		@endif
 		                	</td>
-		                	<td class="vert-align">
+		                	<td class="vert-align" style="white-space:nowrap;">
 		                		<span class="pull-right">
 		                		@if($layout == 'simple')
 		                		<span style="font-size:14px;" class="{{ $cat->color }}">{{ $currency.number_format(($cat->saved + $cat->top_limit) - $cat->balance,2,'.','') }}</span>
