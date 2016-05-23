@@ -31,10 +31,12 @@
 					<?php
 						if($cat->class==20) $sum += $cat->top_limit;
 					?>
-					@if($cat->class != 20)
-					<tr class="c{{ $cat->class }}" style="display:none;">
+					@if($cat->class == 20)
+					<tr data-toplimit="{{ $cat->top_limit }}" class="c{{ $cat->class }}">
+					@elseif($cat->class == 10)
+					<tr data-toplimit="{{ $cat->top_limit }}" class="c{{ $cat->class }} info" style="display:none;">
 					@else
-					<tr class="c{{ $cat->class }}">
+					<tr data-toplimit="{{ $cat->top_limit }}" class="c{{ $cat->class }} active" style="display:none;">
 					@endif
 						<td>{{ $cat->category_name }}</td>
 						<td>{{ $currency.$cat->top_limit }}</td>
@@ -63,8 +65,8 @@
 				@endif
 				@endforeach
 				<tr class="tr-sum">
-					<td><strong>TOTAL</strong></td>
-					<td>{{ $currency. $sum }}</td>
+					<td><strong>TOTAL</strong> <span data-toggle="tooltip" data-placement="top" title="Just the total from categories" class="glyphicon glyphicon-question-sign" aria-hidden="true"></span></td>
+					<td>{{ $currency }}<span class="budget-sum">{{ number_format($sum,2,'.','') }}</span></td>
 					<td></td>
 					<td></td>
 				</tr>

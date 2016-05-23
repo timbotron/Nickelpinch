@@ -1,5 +1,7 @@
 $(document).ready(function()
 {
+	// initialize tooltips
+	$('[data-toggle="tooltip"]').tooltip();
 
 	// Delete entry modal
 	$('table').on('click','.ent-delete',function() 
@@ -266,10 +268,24 @@ $(document).ready(function()
 	{
 		$('tr').hide();
 
+		var sum = 0;
+		var curClass = '';
+
 		$('.filter-budget input:checked').each(function()
 		{
-			$('tr.'+$(this).val()).show();
+			curClass = $(this).val();
+			$('tr.'+$(this).val()).each(function() {
+				$(this).show();
+				if(curClass == 'c20') {
+					sum += parseFloat($(this).data('toplimit'));
+				}
+				
+			});
+			
 		});
+
+		$('.budget-sum').html(sum.toFixed(2));
+		$('.tr-sum').show();
 	});
 
 	if($('.budget-edit-view').length)

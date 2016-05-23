@@ -6,7 +6,7 @@
 		<div class="col-xs-12  col-sm-6 col-md-4 col-md-offset-2">
 			<div class="panel panel-default">
 				<div class="panel-heading">
-					<h3 class="panel-title">Overview</h3>
+					<h3 class="panel-title">Overview <span data-toggle="tooltip" data-placement="top" title="Categories you can spend from, showing current amounts left." class="glyphicon glyphicon-question-sign" aria-hidden="true"></span></h3>
             	</div>
             	<table class="table table-condensed">
 	              	<tbody>
@@ -44,7 +44,7 @@
         <div class="col-xs-12 col-sm-6 col-md-4">
        		<div class="panel panel-default">
             	<div class="panel-heading">
-              		<h3 class="panel-title">{{ $bank_info['name'] }} Summary</h3>
+              		<h3 class="panel-title">{{ $bank_info['name'] }} Summary <span data-toggle="tooltip" data-placement="top" title="Your bank account total, minus all the money that's spoken for." class="glyphicon glyphicon-question-sign" aria-hidden="true"></span></h3>
             	</div>
         		<table class="table table-condensed">
   					<tbody>
