@@ -1,5 +1,7 @@
 $(document).ready(function()
 {
+	// initialize tooltips
+	$('[data-toggle="tooltip"]').tooltip();
 
 	// Delete entry modal
 	$('table').on('click','.ent-delete',function() 

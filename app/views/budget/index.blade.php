@@ -65,7 +65,7 @@
 				@endif
 				@endforeach
 				<tr class="tr-sum">
-					<td><strong>TOTAL</strong> <span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span></td>
+					<td><strong>TOTAL</strong> <span data-toggle="tooltip" data-placement="top" title="Just the total from categories" class="glyphicon glyphicon-question-sign" aria-hidden="true"></span></td>
 					<td>{{ $currency }}<span class="budget-sum">{{ number_format($sum,2,'.','') }}</span></td>
 					<td></td>
 					<td></td>
