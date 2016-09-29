@@ -4,9 +4,11 @@ Nickelpinch is a web-based, personal finance application. Features include a sim
 
 It is open-source, and free to use.
 
-## Official Documentation
+See [Nickelpinch.com website](http://nickelpinch.com) for more information.
 
-Documentation for Nickelpinch can be found on the [Nickelpinch.org website](http://nickelpinch.org).
+## Installation Documentation
+
+See the INSTALL.md for installation instructions.
 
 ### License
 
