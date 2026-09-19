@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Nickelpinch — envelope budgeting that shows the one number that matters: what's truly free to spend. Multi-bank, credit cards, shared budgets, every entry reversible. Open source and self-hostable.">
+  <meta name="author" content="Tim Habersack">
+  <title>Nickelpinch</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <script>
+    // Pre-paint: apply the saved theme before first paint to avoid a flash.
+    try {
+      var t = localStorage.getItem('np-site-theme');
+      if (t) document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  </script>
+  <style>
+    /* Dark is the default — Nickelpinch's identity (near-black, pale-blue accent). A
+       light theme swaps in under OS preference or the corner toggle. */
+    :root {
+      --bg: #000000;
+      --surface: #0b0f14;
+      --elev: #0d141b;
+      --fg: #d6eef7;
+      --muted: #92b2be;
+      --border: #1e2f39;
+      --accent: #7fdbff;
+      --accent-fg: #05070a;
+      --accent-soft: rgba(127, 219, 255, 0.09);
+      --radius: 0px;
+      --glow: 0 0 0 1px rgba(127, 219, 255, 0.16), 0 14px 46px -14px rgba(127, 219, 255, 0.30);
+      --warn: #f5a623;
+      --over: #e5534b;
+      color-scheme: dark;
+    }
+    /* OS-light users get light unless they've explicitly chosen dark. */
+    @media (prefers-color-scheme: light) {
+      :root:not([data-theme="dark"]) {
+        --bg: #f6f7f8;
+        --surface: #ffffff;
+        --elev: #ffffff;
+        --fg: #111827;
+        --muted: #6b7280;
+        --border: #e5e7eb;
+        --accent: #51a351;
+        --accent-fg: #ffffff;
+        --accent-soft: rgba(81, 163, 81, 0.10);
+        --radius: 6px;
+        --glow: 0 10px 30px -12px rgba(17, 24, 39, 0.18);
+        color-scheme: light;
+      }
+    }
+    /* Explicit toggle choices win regardless of OS. */
+    :root[data-theme="light"] {
+      --bg: #f6f7f8; --surface: #ffffff; --elev: #ffffff; --fg: #111827; --muted: #6b7280;
+      --border: #e5e7eb; --accent: #51a351; --accent-fg: #ffffff; --accent-soft: rgba(81, 163, 81, 0.10);
+      --radius: 6px; --glow: 0 10px 30px -12px rgba(17, 24, 39, 0.18); color-scheme: light;
+    }
+    :root[data-theme="dark"] {
+      --bg: #000000; --surface: #0b0f14; --elev: #0d141b; --fg: #d6eef7; --muted: #92b2be;
+      --border: #1e2f39; --accent: #7fdbff; --accent-fg: #05070a; --accent-soft: rgba(127, 219, 255, 0.09);
+      --radius: 0px; --glow: 0 0 0 1px rgba(127, 219, 255, 0.16), 0 14px 46px -14px rgba(127, 219, 255, 0.30); color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    html, body { overflow-x: hidden; max-width: 100%; }
+    body {
+      margin: 0; background: var(--bg); color: var(--fg);
+      font-family: "Hanken Grotesk", system-ui, -apple-system, sans-serif;
+      font-size: 17px; line-height: 1.65; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+    }
+    img { max-width: 100%; }
+    a { color: inherit; }
+    ::selection { background: var(--accent); color: var(--accent-fg); }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+    .wrap { width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 clamp(28px, 6vw, 72px); }
+    .mono { font-family: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace; }
+    .eyebrow {
+      font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+      font-size: 0.72rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--accent); margin: 0 0 18px;
+    }
+
+    /* ---- Header ---- */
+    .site-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 22px; }
+    .brand {
+      font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+      font-weight: 700; font-size: 1.05rem; letter-spacing: 0.02em;
+      display: inline-flex; align-items: center; gap: 9px; text-decoration: none;
+    }
+    .brand .dot { width: 11px; height: 11px; background: var(--accent); border-radius: calc(var(--radius) - 3px); box-shadow: 0 0 0 4px var(--accent-soft); }
+    .header-actions { display: flex; align-items: center; gap: 6px; }
+    .icon-link, .theme-toggle {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 40px; height: 40px; color: var(--muted); background: transparent; border: 1px solid transparent;
+      border-radius: var(--radius); cursor: pointer; text-decoration: none;
+      transition: color .15s ease, border-color .15s ease, background .15s ease;
+    }
+    .icon-link:hover, .theme-toggle:hover { color: var(--fg); border-color: var(--border); background: var(--surface); }
+    .icon-link svg, .theme-toggle svg { width: 20px; height: 20px; }
+
+    /* ---- Buttons ---- */
+    .btn {
+      display: inline-flex; align-items: center; gap: 9px;
+      font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+      font-weight: 500; font-size: 0.92rem; letter-spacing: 0.01em;
+      padding: 13px 22px; border-radius: var(--radius); text-decoration: none; cursor: pointer; border: 1px solid transparent;
+      transition: transform .12s ease, opacity .15s ease, border-color .15s ease, background .15s ease;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--accent); color: var(--accent-fg); box-shadow: var(--glow); }
+    .btn-primary:hover { opacity: 0.92; }
+    .btn-primary .arrow { transition: transform .15s ease; }
+    .btn-primary:hover .arrow { transform: translateX(3px); }
+    .btn-ghost { background: transparent; color: var(--fg); border-color: var(--border); }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ---- Hero ---- */
+    .hero { display: grid; gap: 44px; align-items: center; padding-block: 40px 72px; }
+    .hero > * { min-width: 0; }
+    @media (min-width: 900px) { .hero { grid-template-columns: 1.05fr 0.95fr; gap: 56px; padding-block: 64px 96px; } }
+    .hero h1 { font-size: clamp(2.3rem, 6.2vw, 3.7rem); font-weight: 800; line-height: 1.03; letter-spacing: -0.02em; text-wrap: balance; margin: 0 0 20px; overflow-wrap: break-word; }
+    .hero .lead { font-size: 1.16rem; color: var(--muted); max-width: 40ch; margin: 0 0 30px; }
+    .cta-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .cta-note { font-size: 0.9rem; color: var(--muted); margin: 16px 0 0; }
+    .cta-note b { color: var(--fg); font-weight: 700; }
+
+    /* ---- Dashboard demo ---- */
+    .demo { position: relative; width: 100%; max-width: 400px; margin: 0 auto; }
+    .board { background: var(--surface); border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px); padding: 20px 20px 22px; box-shadow: var(--glow); }
+    .board-title { display: flex; align-items: center; justify-content: space-between; font-weight: 800; font-size: 1.05rem; margin: 0 0 6px; }
+    .board-title .cur { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 0.7rem; letter-spacing: 0.12em; color: var(--accent); }
+    .env { padding: 11px 2px; border-top: 1px solid var(--border); }
+    .env:first-of-type { border-top: none; }
+    .env-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .env-name { font-weight: 700; }
+    .env-amt { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 0.85rem; color: var(--muted); }
+    .health { height: 6px; width: 100%; background: var(--border); border-radius: var(--radius); overflow: hidden; }
+    .health-fill { display: block; height: 100%; width: 0; background: var(--accent); border-radius: var(--radius); transition: width .45s cubic-bezier(.2,.7,.2,1), background .3s ease; }
+    .health-fill.is-warn { background: var(--warn); }
+    .health-fill.is-over { background: var(--over); }
+    .extra { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .extra-label { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
+    .extra-num { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 2.1rem; font-weight: 800; color: var(--accent); line-height: 1.05; }
+    .demo-log {
+      margin-top: 14px; width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 0.82rem; font-weight: 500;
+      padding: 10px 14px; border-radius: var(--radius); cursor: pointer;
+      color: var(--fg); background: transparent; border: 1px solid var(--border);
+      transition: border-color .15s ease, color .15s ease, background .15s ease;
+    }
+    .demo-log:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+    .demo-caption { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 0.78rem; color: var(--muted); margin: 14px 2px 0; text-align: center; }
+
+    /* ---- Add-entry demo form (the multi-envelope split, live) ---- */
+    .form-head { display: flex; align-items: baseline; justify-content: space-between; font-weight: 800; font-size: 1.05rem; margin: 0 0 14px; }
+    .form-x { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 0.72rem; letter-spacing: 0.04em; color: var(--muted); background: none; border: none; cursor: pointer; padding: 4px 2px; }
+    .form-x:hover { color: var(--accent); }
+    .split-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .split-sel {
+      flex: 1 1 auto; min-width: 0; font-family: inherit; font-size: 0.92rem; color: var(--fg);
+      background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23889aa3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;
+      border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 30px 9px 10px; -webkit-appearance: none; appearance: none; cursor: pointer;
+    }
+    .split-sel:focus { outline: none; border-color: var(--accent); }
+    .split-amt { flex: none; width: 108px; display: flex; align-items: center; gap: 3px; border: 1px solid var(--border); border-radius: var(--radius); padding: 0 10px; background: var(--surface); }
+    .split-amt:focus-within { border-color: var(--accent); }
+    .split-amt > span { color: var(--muted); font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 0.85rem; }
+    .split-amt input { width: 100%; min-width: 0; border: none; outline: none; background: transparent; color: var(--fg); font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 0.92rem; padding: 9px 0; }
+    .split-del { flex: none; width: 30px; height: 34px; color: var(--muted); background: none; border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; font-size: 1rem; line-height: 1; }
+    .split-del:hover:not(:disabled) { color: var(--over); border-color: var(--over); }
+    .add-split { margin-top: 2px; }
+    .form-total { display: flex; align-items: baseline; justify-content: space-between; border-top: 1px solid var(--border); margin-top: 14px; padding-top: 14px; }
+    .form-total .lbl { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+    .form-total .val { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 1.5rem; font-weight: 800; color: var(--accent); }
+    .form-save { width: 100%; justify-content: center; margin-top: 14px; }
+    .btn[disabled] { opacity: 0.45; cursor: default; box-shadow: none; }
+    .btn[disabled]:hover { opacity: 0.45; }
+    .env.flash { animation: envflash 1.1s ease; }
+    @keyframes envflash { 0%, 100% { background: transparent; } 22% { background: var(--accent-soft); } }
+    @media (prefers-reduced-motion: reduce) { .env.flash { animation: none; } }
+
+    /* ---- Sections ---- */
+    .section { padding-block: 72px; border-top: 1px solid var(--border); }
+    .section h2 { font-size: clamp(1.5rem, 3.2vw, 2.1rem); font-weight: 800; letter-spacing: -0.015em; text-wrap: balance; margin: 0 0 10px; }
+    .section-intro { color: var(--muted); max-width: 60ch; margin: 0 0 40px; }
+
+    .steps { display: grid; gap: 20px; }
+    @media (min-width: 760px) { .steps { grid-template-columns: repeat(3, 1fr); gap: 24px; } }
+    .step { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px 24px; }
+    .step-num { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 0.8rem; font-weight: 700; color: var(--accent); letter-spacing: 0.1em; display: block; margin-bottom: 14px; }
+    .step h3 { font-size: 1.14rem; font-weight: 700; margin: 0 0 8px; }
+    .step p { color: var(--muted); margin: 0; font-size: 0.98rem; }
+
+    .features { display: grid; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    @media (min-width: 720px) { .features { grid-template-columns: 1fr 1fr; } }
+    .feature { background: var(--surface); padding: 30px 28px; }
+    .feat-icon { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; color: var(--accent); background: var(--accent-soft); border-radius: var(--radius); margin-bottom: 16px; }
+    .feat-icon svg { width: 21px; height: 21px; }
+    .feature h3 { font-size: 1.1rem; font-weight: 700; margin: 0 0 7px; }
+    .feature p { color: var(--muted); margin: 0; font-size: 0.98rem; }
+
+    /* ---- Reports / charts (self-contained inline SVG, themed via CSS vars) ---- */
+    .chart-grid { display: grid; gap: 20px; }
+    @media (min-width: 760px) { .chart-grid { grid-template-columns: 1fr 1fr; gap: 24px; } }
+    .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px); padding: 22px 22px 18px; box-shadow: var(--glow); }
+    .chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 4px; }
+    .chart-head h3 { font-size: 1.06rem; font-weight: 700; margin: 0; }
+    .chart-tag { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); flex: none; }
+    .chart-sub { color: var(--muted); font-size: 0.9rem; margin: 0 0 14px; }
+    .chart { display: block; width: 100%; height: auto; }
+    .chart .bar { fill: var(--accent); }
+    .chart .grid { stroke: var(--border); stroke-width: 1; }
+    .chart .axis { fill: var(--muted); font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 9px; letter-spacing: 0.02em; }
+    .chart .num { fill: var(--muted); font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 8.5px; }
+    .chart .area { fill: var(--accent); opacity: 0.14; }
+    .chart .line { fill: none; stroke: var(--accent); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .chart .dot { fill: var(--accent); }
+
+    .perms { display: grid; gap: 40px; align-items: center; }
+    .perms > * { min-width: 0; }
+    @media (min-width: 900px) { .perms { grid-template-columns: 1fr 0.9fr; gap: 56px; } }
+    .perms .spectrum { color: var(--muted); margin: 18px 0 0; }
+    .perms .spectrum b { color: var(--fg); font-weight: 700; }
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px); padding: 22px 22px 18px; box-shadow: var(--glow); max-width: 420px; margin: 0 auto; width: 100%; }
+    .panel-title { font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+    .perm-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 8px; border-radius: var(--radius); }
+    .perm-mark { flex: none; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: var(--radius); }
+    .perm-mark svg { width: 14px; height: 14px; }
+    .perm-row.yes .perm-mark { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+    .perm-row.no .perm-mark { color: var(--over); }
+    .perm-row.no .perm-label { color: var(--muted); }
+    .perm-label { flex: 1; }
+    .panel-note { font-size: 0.82rem; color: var(--muted); margin: 10px 4px 0; border-top: 1px solid var(--border); padding-top: 12px; }
+
+    .story { max-width: 62ch; }
+    .story p { font-size: 1.14rem; margin: 0; }
+    .story p + p { margin-top: 18px; }
+    .story .signoff { color: var(--muted); font-size: 1rem; }
+
+    .faq { display: grid; gap: 18px; max-width: 68ch; }
+    .faq-item { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 22px 24px; }
+    .faq-item h3 { font-size: 1.05rem; font-weight: 700; margin: 0 0 8px; }
+    .faq-item p { color: var(--muted); margin: 0; font-size: 0.98rem; }
+
+    .cta-band { border-top: 1px solid var(--border); background: var(--surface); text-align: center; padding: 72px 0; }
+    .cta-band h2 { font-size: clamp(1.6rem, 3.6vw, 2.3rem); font-weight: 800; letter-spacing: -0.02em; margin: 0 0 10px; text-wrap: balance; }
+    .cta-band p { color: var(--muted); margin: 0 0 26px; }
+
+    .site-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding-block: 30px; color: var(--muted); font-family: "JetBrains Mono", ui-monospace, Menlo, monospace; font-size: 0.8rem; }
+    .site-footer a { color: var(--muted); text-decoration: none; }
+    .site-footer a:hover { color: var(--accent); }
+    .footer-links { display: flex; gap: 20px; flex-wrap: wrap; }
+
+    .reveal { opacity: 0; transform: translateY(14px); animation: rise .7s cubic-bezier(.2,.7,.2,1) forwards; }
+    .reveal.d1 { animation-delay: .06s; }
+    .reveal.d2 { animation-delay: .12s; }
+    .reveal.d3 { animation-delay: .18s; }
+    @keyframes rise { to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { animation: none; opacity: 1; transform: none; }
+      .btn, .health-fill, .btn-primary .arrow { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="wrap site-header">
+    <a class="brand" href="/" aria-label="Nickelpinch home">
+      <span class="dot" aria-hidden="true"></span>Nickelpinch
+    </a>
+    <div class="header-actions">
+      <a class="icon-link" href="https://github.com/timbotron/Nickelpinch" target="_blank" rel="noopener" aria-label="Nickelpinch on GitHub" title="View source on GitHub">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.37.5 0 5.78 0 12.29c0 5.2 3.44 9.6 8.21 11.15.6.11.82-.25.82-.56 0-.28-.01-1.02-.02-2-3.34.71-4.04-1.58-4.04-1.58-.55-1.37-1.34-1.73-1.34-1.73-1.09-.73.08-.72.08-.72 1.2.08 1.84 1.21 1.84 1.21 1.07 1.79 2.81 1.27 3.5.97.11-.76.42-1.27.76-1.56-2.67-.3-5.47-1.3-5.47-5.79 0-1.28.47-2.33 1.24-3.15-.13-.3-.54-1.5.12-3.13 0 0 1.01-.32 3.3 1.2a11.6 11.6 0 0 1 6 0c2.29-1.52 3.3-1.2 3.3-1.2.66 1.63.25 2.83.12 3.13.77.82 1.24 1.87 1.24 3.15 0 4.5-2.81 5.49-5.49 5.78.43.36.81 1.08.81 2.18 0 1.57-.01 2.84-.01 3.23 0 .31.21.68.83.56A12.02 12.02 0 0 0 24 12.29C24 5.78 18.63.5 12 .5z"/></svg>
+      </a>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle light or dark theme" title="Toggle theme"></button>
+    </div>
+  </header>
+
+  <main>
+    <section class="wrap hero">
+      <div class="hero-copy">
+        <p class="eyebrow reveal">Envelope budgeting · Self-hosted</p>
+        <h1 class="reveal d1">Know what every dollar is doing.</h1>
+        <p class="lead reveal d2">Split your money into envelopes, track spending against each, and see the one number that matters: what&#39;s truly free to spend. Multiple banks and cards, shared budgets, and every entry reversible — free and open source.</p>
+        <div class="cta-row reveal d3">
+          <a class="btn btn-primary" href="http://app.nickelpinch.com">Open Nickelpinch <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn btn-ghost" href="https://github.com/timbotron/Nickelpinch" target="_blank" rel="noopener">It&#39;s open source</a>
+        </div>
+        <p class="cta-note reveal d3">Self-hostable · No ads · <b>Free.</b></p>
+      </div>
+
+      <div class="demo reveal d2">
+        <div class="board" id="demo-board" aria-label="Example Nickelpinch budget">
+          <p class="board-title">Household <span class="cur">USD</span></p>
+
+          <div id="demo-dash">
+            <div class="env" id="env-groceries">
+              <div class="env-top"><span class="env-name">Groceries</span><span class="env-amt"></span></div>
+              <div class="health"><span class="health-fill"></span></div>
+            </div>
+            <div class="env" id="env-dining">
+              <div class="env-top"><span class="env-name">Dining</span><span class="env-amt"></span></div>
+              <div class="health"><span class="health-fill"></span></div>
+            </div>
+            <div class="env" id="env-transport">
+              <div class="env-top"><span class="env-name">Transport</span><span class="env-amt"></span></div>
+              <div class="health"><span class="health-fill"></span></div>
+            </div>
+
+            <div class="extra">
+              <p class="extra-label">Extra · free to spend</p>
+              <div class="extra-num mono" id="extra-num"></div>
+            </div>
+
+            <button class="demo-log" id="demo-add" type="button">＋ Add entry</button>
+          </div>
+
+          <form id="demo-form" autocomplete="off" hidden>
+            <p class="form-head">New purchase <button type="button" class="form-x" id="demo-cancel">Cancel</button></p>
+            <div id="split-rows"></div>
+            <button type="button" class="demo-log add-split" id="add-split">＋ Add another envelope</button>
+            <div class="form-total"><span class="lbl">Total</span><span class="val mono" id="form-total">$0.00</span></div>
+            <button type="submit" class="btn btn-primary form-save">Save entry</button>
+          </form>
+        </div>
+        <p class="demo-caption" id="demo-caption">↑ add a purchase — split it across envelopes and watch Extra move</p>
+      </div>
+    </section>
+
+    <section class="wrap section" aria-labelledby="how">
+      <p class="eyebrow">How it works</p>
+      <h2 id="how">Divide it, track it, see what&#39;s free.</h2>
+      <p class="section-intro">The cash-envelope method without the cash — and with one number on top telling you where you really stand.</p>
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">01</span>
+          <h3>Set up your budget</h3>
+          <p>Add your bank accounts and credit cards, then divide your monthly money into envelopes — groceries, dining, savings, whatever fits your life.</p>
+        </div>
+        <div class="step">
+          <span class="step-num">02</span>
+          <h3>Log as you spend</h3>
+          <p>A purchase — split across a few envelopes if you like — a deposit, a transfer, a card payment. Each one is a couple of taps.</p>
+        </div>
+        <div class="step">
+          <span class="step-num">03</span>
+          <h3>See what&#39;s free</h3>
+          <p>Every entry updates your balances and your <b>Extra</b>: the money that isn&#39;t already spoken for. Change your mind? Delete it and it cleanly undoes itself.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap section" aria-labelledby="reports">
+      <p class="eyebrow">See the shape of it</p>
+      <h2 id="reports">Reports that show where the money actually went.</h2>
+      <p class="section-intro">Every entry feeds a set of fast, built-in reports — spend by month across the budget, and any single envelope&#39;s trend over time. No spreadsheets, no exports.</p>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="chart-head"><h3>Spend per month</h3><span class="chart-tag">Groceries</span></div>
+          <p class="chart-sub">A bar per month — spot the creep before it&#39;s a problem.</p>
+          <svg class="chart" viewBox="0 0 340 200" role="img" aria-label="Bar chart of monthly grocery spend, April through September, ranging about $275 to $410.">
+            <rect class="bar" x="22.27" y="61.61" width="28.8" height="112.39" rx="1"/>
+            <text class="num" x="36.67" y="54.61" text-anchor="middle">$320</text>
+            <text class="axis" x="36.67" y="191" text-anchor="middle">Apr</text>
+            <rect class="bar" x="75.6" y="30" width="28.8" height="144" rx="1"/>
+            <text class="num" x="90" y="23" text-anchor="middle">$410</text>
+            <text class="axis" x="90" y="191" text-anchor="middle">May</text>
+            <rect class="bar" x="128.93" y="77.41" width="28.8" height="96.59" rx="1"/>
+            <text class="num" x="143.33" y="70.41" text-anchor="middle">$275</text>
+            <text class="axis" x="143.33" y="191" text-anchor="middle">Jun</text>
+            <rect class="bar" x="182.27" y="37.02" width="28.8" height="136.98" rx="1"/>
+            <text class="num" x="196.67" y="30.02" text-anchor="middle">$390</text>
+            <text class="axis" x="196.67" y="191" text-anchor="middle">Jul</text>
+            <rect class="bar" x="235.6" y="68.63" width="28.8" height="105.37" rx="1"/>
+            <text class="num" x="250" y="61.63" text-anchor="middle">$300</text>
+            <text class="axis" x="250" y="191" text-anchor="middle">Aug</text>
+            <rect class="bar" x="288.93" y="49.32" width="28.8" height="124.68" rx="1"/>
+            <text class="num" x="303.33" y="42.32" text-anchor="middle">$355</text>
+            <text class="axis" x="303.33" y="191" text-anchor="middle">Sep</text>
+            <line class="grid" x1="10" y1="174.5" x2="330" y2="174.5"/>
+          </svg>
+        </div>
+        <div class="chart-card">
+          <div class="chart-head"><h3>Envelope trend</h3><span class="chart-tag">Over time</span></div>
+          <p class="chart-sub">One envelope&#39;s spending, charted smoothly from first entry to now.</p>
+          <svg class="chart" viewBox="0 0 340 200" role="img" aria-label="Smoothed line chart of one envelope's spending trending upward over time.">
+            <line class="grid" x1="10" y1="123.33" x2="330" y2="123.33"/>
+            <line class="grid" x1="10" y1="72.67" x2="330" y2="72.67"/>
+            <line class="grid" x1="10" y1="174.5" x2="330" y2="174.5"/>
+            <path class="area" d="M10,107.5 C17.62,102.75 40.48,80.58 55.71,79 C70.95,77.42 86.19,101.96 101.43,98 C116.67,94.04 131.9,60 147.14,55.25 C162.38,50.5 177.62,72.93 192.86,69.5 C208.1,66.07 223.33,36.25 238.57,34.67 C253.81,33.08 269.05,62.11 284.29,60 C299.52,57.89 322.38,28.33 330,22 L330,174 L10,174 Z"/>
+            <path class="line" d="M10,107.5 C17.62,102.75 40.48,80.58 55.71,79 C70.95,77.42 86.19,101.96 101.43,98 C116.67,94.04 131.9,60 147.14,55.25 C162.38,50.5 177.62,72.93 192.86,69.5 C208.1,66.07 223.33,36.25 238.57,34.67 C253.81,33.08 269.05,62.11 284.29,60 C299.52,57.89 322.38,28.33 330,22"/>
+            <circle class="dot" cx="330" cy="22" r="3.2"/>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap section" aria-labelledby="features">
+      <p class="eyebrow">What&#39;s inside</p>
+      <h2 id="features">Everything the envelope method needs. Nothing it doesn&#39;t.</h2>
+      <p class="section-intro">Real budgeting mechanics — multiple accounts, credit cards, split purchases, savings that roll over — with the clarity of a single free-to-spend figure.</p>
+      <div class="features">
+        <div class="feature">
+          <span class="feat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+          <h3>The &ldquo;Extra&rdquo; number</h3>
+          <p>One figure for what&#39;s truly unspoken-for: your bank balances minus what&#39;s still budgeted, what&#39;s set aside, and what you owe on cards. Green when you&#39;re ahead.</p>
+        </div>
+        <div class="feature">
+          <span class="feat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
+          <h3>Multi-bank &amp; credit cards</h3>
+          <p>Track as many bank accounts and cards as you carry. See each balance on its own, and rolled up into the combined picture — cards&#39; owed amounts included.</p>
+        </div>
+        <div class="feature">
+          <span class="feat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg></span>
+          <h3>Split any purchase</h3>
+          <p>One $230 shop, three envelopes — food, clothes, household. Divide a purchase across up to five, and Nickelpinch does the assign-the-rest math for you.</p>
+        </div>
+        <div class="feature">
+          <span class="feat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M3.51 13a9 9 0 1 0 .49-4.5L3 7"/></svg></span>
+          <h3>Everything&#39;s reversible</h3>
+          <p>Logged it wrong? Delete any transaction and every balance it touched is undone exactly — no manual fix-ups. Even the monthly reset can be walked back.</p>
+        </div>
+        <div class="feature">
+          <span class="feat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg></span>
+          <h3>Rollover &amp; monthly reset</h3>
+          <p>Set a limit per envelope; unspent budget rolls into that envelope&#39;s savings, or resets — your call, per envelope. Start a fresh month in one reversible step.</p>
+        </div>
+        <div class="feature">
+          <span class="feat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/></svg></span>
+          <h3>Light &amp; dark, phone-first</h3>
+          <p>A blacked-out theme by default or a clean light one — follows your device, or pick in the corner. Thumb-friendly on a phone, roomy on a desktop.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap section" aria-labelledby="perms">
+      <p class="eyebrow">Sharing, your way</p>
+      <h2 id="perms">Share a whole budget — or just one envelope.</h2>
+      <p class="section-intro">Bring a partner in as a full member who logs money alongside you. Or hand a single envelope to someone — a kid&#39;s allowance — who sees only that, never your accounts or the rest.</p>
+      <div class="perms">
+        <div class="perms-copy">
+          <p class="spectrum">It&#39;s a dial, not a switch: from a <b>full member</b> who adds purchases and manages envelopes with you, to a <b>view-only guest</b> scoped to one shared envelope and its history — and nothing else you own.</p>
+        </div>
+        <div class="perms-panel">
+          <div class="panel" aria-label="What a shared-envelope guest can see">
+            <p class="panel-title">A shared-envelope guest can see…</p>
+            <div class="perm-row yes"><span class="perm-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="perm-label">The one envelope you shared</span></div>
+            <div class="perm-row yes"><span class="perm-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="perm-label">Its transaction history</span></div>
+            <div class="perm-row no"><span class="perm-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span><span class="perm-label">Your bank accounts &amp; cards</span></div>
+            <div class="perm-row no"><span class="perm-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span><span class="perm-label">Your other envelopes</span></div>
+            <div class="perm-row no"><span class="perm-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span><span class="perm-label">The combined &ldquo;Extra&rdquo; figure</span></div>
+            <p class="panel-note">Full members get the whole budget&#39;s money tools; sharing, settings, and deleting stay with you, the owner.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap section" aria-labelledby="story">
+      <p class="eyebrow">Why it exists</p>
+      <h2 id="story">It started with a shoebox of envelopes.</h2>
+      <div class="story">
+        <p>The envelope method is honest: divide your money, spend from each envelope, and when one&#39;s empty, you&#39;re done for the month. But cash is a hassle, and every app that promised to do it digitally buried the idea under spreadsheets and features nobody asked for.</p>
+        <p>So I built the version I actually wanted — the envelope method kept simple, with one number on top that answers the only question that matters: how much is really free to spend right now?</p>
+        <p class="signoff">It&#39;s been how I budget ever since. Hope it earns a place in your routine too.</p>
+      </div>
+    </section>
+
+    <section class="wrap section" aria-labelledby="faq">
+      <p class="eyebrow">Fair questions</p>
+      <h2 id="faq">Accounts, privacy, and running your own.</h2>
+      <div class="faq">
+        <div class="faq-item">
+          <h3>Do the people I share with need an account?</h3>
+          <p>A free account owns your budget. Anyone you bring in signs in too — but a view-only guest only ever sees the single envelope you shared and its history, never your accounts or anything else.</p>
+        </div>
+        <div class="faq-item">
+          <h3>Is my financial data private?</h3>
+          <p>Your money lives inside your budget, scoped so members and guests see only what you grant them. And Nickelpinch is open source — host your own copy and the data never leaves a server you control.</p>
+        </div>
+        <div class="faq-item">
+          <h3>Can it handle several accounts and cards?</h3>
+          <p>Yes. Track as many bank accounts and credit cards as you like. Nickelpinch shows each balance on its own and rolls them into one combined figure — with what you owe on cards subtracted out.</p>
+        </div>
+        <div class="faq-item">
+          <h3>Can I run my own copy?</h3>
+          <p>Absolutely. It&#39;s MIT licensed and on GitHub — clone it, point it at your own server, done.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-band" aria-labelledby="cta">
+      <div class="wrap">
+        <h2 id="cta">Know where every dollar goes.</h2>
+        <p>Divide it, track it, and see what&#39;s free — in a couple of minutes.</p>
+        <a class="btn btn-primary" href="http://app.nickelpinch.com">Open Nickelpinch <span class="arrow" aria-hidden="true">→</span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap site-footer">
+    <span>© 2026 <a href="https://tim.hithlonde.com">Tim Habersack</a></span>
+    <span class="footer-links">
+      <a href="http://app.nickelpinch.com" target="_blank" rel="noopener">Open the app</a>
+      <a href="https://github.com/timbotron/Nickelpinch" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://twitter.com/nickelpinch" target="_blank" rel="noopener">Twitter</a>
+      <a href="mailto:contact@nickelpinch.com">Contact</a>
+      <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT license</a>
+    </span>
+  </footer>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+
+      // ---- Theme toggle (dark is the default) ----
+      var btn = document.getElementById('theme-toggle');
+      var SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>';
+      var MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+      function effectiveTheme() {
+        var set = root.getAttribute('data-theme');
+        if (set) return set;
+        return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      }
+      function paintIcon() { btn.innerHTML = effectiveTheme() === 'dark' ? SUN : MOON; }
+      paintIcon();
+      btn.addEventListener('click', function () {
+        var next = effectiveTheme() === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        try { localStorage.setItem('np-site-theme', next); } catch (e) {}
+        paintIcon();
+      });
+      window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function () {
+        if (!root.getAttribute('data-theme')) paintIcon();
+      });
+
+      // ---- Add-entry demo: split one purchase across envelopes, watch Extra move ----
+      var ENVS = [
+        { key: 'groceries', name: 'Groceries', spent: 210, limit: 640, saved: 0 },
+        { key: 'dining',    name: 'Dining',    spent: 175, limit: 200, saved: 0 },
+        { key: 'transport', name: 'Transport', spent: 60,  limit: 160, saved: 0 }
+      ];
+      var extra = 8105;
+
+      function fmt(n) {
+        return (n < 0 ? '-' : '') + '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+      function renderDash() {
+        ENVS.forEach(function (e) {
+          var el = document.getElementById('env-' + e.key);
+          var denom = e.limit + e.saved;
+          var rem = denom - e.spent;
+          var pct = denom > 0 ? Math.max(0, Math.min(100, (e.spent / denom) * 100)) : 0;
+          var fill = el.querySelector('.health-fill');
+          fill.style.width = pct + '%';
+          fill.className = 'health-fill' + (e.spent > denom ? ' is-over' : pct >= 75 ? ' is-warn' : '');
+          var amt = el.querySelector('.env-amt');
+          amt.textContent = fmt(rem) + ' left';
+          amt.style.color = rem < 0 ? 'var(--over)' : '';
+        });
+        document.getElementById('extra-num').textContent = fmt(extra);
+      }
+      renderDash();
+
+      var dash = document.getElementById('demo-dash');
+      var form = document.getElementById('demo-form');
+      var rowsEl = document.getElementById('split-rows');
+      var totalEl = document.getElementById('form-total');
+      var addSplitBtn = document.getElementById('add-split');
+      var caption = document.getElementById('demo-caption');
+      var saveBtn = form.querySelector('.form-save');
+
+      function optionsHtml(sel) {
+        return ENVS.map(function (e) {
+          return '<option value="' + e.key + '"' + (e.key === sel ? ' selected' : '') + '>' + e.name + '</option>';
+        }).join('');
+      }
+      function rowsData() {
+        return Array.prototype.map.call(rowsEl.children, function (row) {
+          return { key: row.querySelector('.split-sel').value, amount: parseFloat(row.querySelector('input').value) || 0 };
+        });
+      }
+      function recalc() {
+        var total = rowsData().reduce(function (a, r) { return a + r.amount; }, 0);
+        totalEl.textContent = fmt(total);
+        saveBtn.disabled = !(total > 0);
+      }
+      function refreshRowState() {
+        var single = rowsEl.children.length <= 1;
+        Array.prototype.forEach.call(rowsEl.querySelectorAll('.split-del'), function (b) {
+          b.disabled = single;
+          b.style.visibility = single ? 'hidden' : 'visible';
+        });
+        addSplitBtn.hidden = rowsEl.children.length >= ENVS.length;
+      }
+      function nextUnusedKey() {
+        var used = Array.prototype.map.call(rowsEl.querySelectorAll('.split-sel'), function (s) { return s.value; });
+        var free = ENVS.filter(function (e) { return used.indexOf(e.key) === -1; })[0];
+        return free ? free.key : ENVS[0].key;
+      }
+      function addRow(envKey, amount) {
+        var row = document.createElement('div');
+        row.className = 'split-row';
+        row.innerHTML =
+          '<select class="split-sel">' + optionsHtml(envKey) + '</select>' +
+          '<span class="split-amt"><span>$</span><input type="text" inputmode="decimal" placeholder="0" value="' + amount + '"></span>' +
+          '<button type="button" class="split-del" aria-label="Remove envelope">×</button>';
+        row.querySelector('input').addEventListener('input', recalc);
+        row.querySelector('.split-sel').addEventListener('change', recalc);
+        row.querySelector('.split-del').addEventListener('click', function () {
+          if (rowsEl.children.length > 1) { row.remove(); refreshRowState(); recalc(); }
+        });
+        rowsEl.appendChild(row);
+      }
+
+      function openForm() {
+        rowsEl.innerHTML = '';
+        addRow('groceries', '85');
+        refreshRowState();
+        recalc();
+        dash.hidden = true; form.hidden = false; caption.hidden = true;
+      }
+      function closeForm() { form.hidden = true; dash.hidden = false; caption.hidden = false; }
+
+      document.getElementById('demo-add').addEventListener('click', openForm);
+      document.getElementById('demo-cancel').addEventListener('click', closeForm);
+      addSplitBtn.addEventListener('click', function () {
+        addRow(nextUnusedKey(), '');
+        refreshRowState();
+        recalc();
+      });
+      form.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var total = 0, touched = [];
+        rowsData().forEach(function (r) {
+          if (r.amount <= 0) return;
+          var e = ENVS.filter(function (x) { return x.key === r.key; })[0];
+          if (!e) return;
+          e.spent += r.amount; total += r.amount;
+          if (touched.indexOf(r.key) === -1) touched.push(r.key);
+        });
+        if (total <= 0) return;
+        extra -= total;
+        renderDash();
+        closeForm();
+        touched.forEach(function (k) {
+          var el = document.getElementById('env-' + k);
+          el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

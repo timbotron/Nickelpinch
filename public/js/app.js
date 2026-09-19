@@ -1,398 +1,150 @@
-$(document).ready(function()
-{
-	// initialize tooltips
-	$('[data-toggle="tooltip"]').tooltip();
+// Nickelpinch — no build step. Mithril is vendored (global `m`); this is a plain
+// script. As screens land (Epic F) they mount Mithril islands guarded by getElementById.
 
-	// Delete entry modal
-	$('table').on('click','.ent-delete',function() 
-	{
-		var $target = $(this).data('entid');
-		var $sure = $('#entry-template-delete').html();
-		$sure = $sure.replace(/{entid}/gim,$target);
-		$('.details-for-'+$target).after($sure);
+// Shared toolkit for the Mithril islands. NP.req is the only sanctioned way to hit
+// a mutating JSON endpoint: it carries the CSRF token the server requires on XHR
+// (the SameSite=Lax session cookie is the first factor; this custom header, which a
+// cross-origin page cannot set without a CORS preflight we never grant, is the
+// second). The token is emitted into <meta name="csrf-token"> for logged-in pages.
+window.NP = window.NP || {}
+;(function (NP) {
+  var meta = document.querySelector('meta[name="csrf-token"]')
+  NP.csrf = meta ? meta.getAttribute('content') : ''
 
-	});
+  // Mutating JSON request through Mithril, with the CSRF header attached.
+  NP.req = function (method, url, body) {
+    return m.request({
+      method: method,
+      url: url,
+      body: body,
+      headers: { 'X-CSRF-Token': NP.csrf },
+    })
+  }
 
-	// cancel delete
-	$('table').on('click','.delete-entry-abort',function() 
-	{
-		var $target = $(this).data('entid');
-		$('.alert-for-delete-'+$target).remove();
+  // --- shared money helpers (integer cents; no float) — DECIMAL(22,2) at the edges.
+  NP.toCents = function (dec) {
+    dec = String(dec == null ? '' : dec).trim()
+    var neg = dec.charAt(0) === '-'
+    if (neg) dec = dec.slice(1)
+    var parts = dec.split('.')
+    var frac = ((parts[1] || '') + '00').slice(0, 2)
+    var c = (parseInt(parts[0], 10) || 0) * 100 + (parseInt(frac, 10) || 0)
+    return neg ? -c : c
+  }
+  NP.fromCents = function (c) {
+    var neg = c < 0
+    c = Math.abs(c)
+    return (neg ? '-' : '') + Math.floor(c / 100) + '.' + String(c % 100).padStart(2, '0')
+  }
+  var SYMBOL = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', CAD: '$', AUD: '$' }
+  NP.money = function (currency, s) {
+    var n = Number(s)
+    var body = Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    return (n < 0 ? '-' : '') + (SYMBOL[currency] || '') + body
+  }
 
-	});
+  // A themed <select> (appearance:none + a themed chevron) so dropdowns match the app
+  // rather than showing native OS chrome. `options` are pre-built <option> vnodes;
+  // `attrs` go on the select; `wrapCls` sizes the wrapper (e.g. 'w-full sm:w-56').
+  var CHEVRON = '<span class="select-chevron" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>'
+  NP.select = function (options, attrs, wrapCls) {
+    return m('.select-wrap' + (wrapCls ? '.' + wrapCls.replace(/\s+/g, '.') : ''), [
+      m('select.select', attrs, options),
+      m.trust(CHEVRON),
+    ])
+  }
 
-	// Actually delete the entry now!
-	$('table').on('click','.delete-entry-confirmed',function() 
-	{
-		var $target = $(this).data('entid');
-		var $deleting = '<div class="alert alert-danger" role="alert"><span class="glyphicon glyphicon-trash"></span>Deleting Entry..</div>';
-		var $ok = '<div class="alert alert-success" role="alert"><span class="glyphicon glyphicon-ok"></span> Entry Deleted Successfully</div>';
-        $('.alert-for-delete-'+$target).html($deleting);
-		
-		// Tell that API to delete it!
-		$.ajax({
-            type: 'DELETE',
-            url: '/api/entry_delete/'+$target,  
-            data: '',
-            dataType: 'html',
-            success: function(response) {
+  // A labeled input or themed select for the island forms. onset(value) receives
+  // changes; pass opts.options as [[value, label], ...] for a select, else opts.type/ph.
+  NP.field = function (label, value, onset, opts) {
+    opts = opts || {}
+    var control = opts.options
+      ? NP.select(
+          opts.options.map(function (o) { return m('option', { value: o[0], selected: String(o[0]) === String(value) }, o[1]) }),
+          { onchange: function (e) { onset(e.target.value) } })
+      : m('input.field', { type: opts.type || 'text', value: value == null ? '' : value, placeholder: opts.ph || '', oninput: function (e) { onset(e.target.value) } })
+    return m('label.mb-2.block', [m('span.mono.mb-1.block.text-xs.text-muted', label), control])
+  }
+})(window.NP)
 
-               $('.alert-for-delete-'+$target).html($ok);
-               setTimeout(function()
-               {
-               	$('.alert-for-delete-'+$target).parent().fadeOut().parent().fadeOut().prev().fadeOut().prev().fadeOut();
-               },500);
+;(function () {
+  var root = document.documentElement
 
+  // Theme toggle (dark is the default). Anonymous viewers persist to localStorage;
+  // logged-in users get a server-saved theme once the users.theme column lands.
+  var toggle = document.getElementById('theme-toggle')
+  if (toggle) {
+    toggle.addEventListener('click', function () {
+      var next = (root.getAttribute('data-theme') || 'dark') === 'dark' ? 'light' : 'dark'
+      root.setAttribute('data-theme', next)
+      try { localStorage.setItem('np-theme', next) } catch (e) {}
+      // Logged-in users (the shell stamps data-auth): persist the choice server-side
+      // so it follows them across reloads and devices (F7 / E8). Fire-and-forget.
+      if (root.getAttribute('data-auth')) { NP.req('PUT', '/api/settings', { theme: next }).catch(function () {}) }
+    })
+  }
 
+  // Mobile nav (CODE-310): the hamburger shows below sm; it toggles the menu panel's
+  // `hidden` class (sm:flex keeps it inline on desktop regardless).
+  var navToggle = document.getElementById('nav-toggle')
+  var navMenu = document.getElementById('nav-menu')
+  if (navToggle && navMenu) {
+    navToggle.addEventListener('click', function () {
+      var open = navMenu.classList.toggle('hidden') === false
+      navToggle.setAttribute('aria-expanded', open ? 'true' : 'false')
+    })
+  }
+})()
 
-                
-            },
-          
-            timeout: function(response) {
-            },
-            error: function(response,two,three) {
-                 var $result = jQuery.parseJSON(response.responseText);
-                 var $errors = $result.errors;
-                 var $displayme = '';
-                 for (var key in $errors)
-                 {
-                 	if($errors[key] instanceof Array)
-                 	{
-                     	$displayme = $displayme + '<div class="alert alert-warning">'+$errors[key][0]+'</div>';
-                 		
-                 	}
-                 	else
-                 	{
-                     	$displayme = $displayme + '<div class="alert alert-warning">'+$errors[key]+'</div>';
-                 	}
-                     
-                 }
-                 $('.alert-for-delete-'+$target).html($displayme);
-            }
-        });
+// Budget switcher (F1). A shell-level Mithril island: lists the budgets the user can
+// reach (GET /api/budgets), marks the session's active one (from window.__NP__), and
+// on change switches it server-side (POST .../switch) then reloads so the
+// server-rendered pages pick up the new active_budget_id. Only mounts where the shell
+// left a #budget-switcher node — i.e. for logged-in pages.
+;(function () {
+  var el = document.getElementById('budget-switcher')
+  if (!el) return
 
-	});
+  var boot = window.__NP__ || {}
+  var state = { budgets: null, active: boot.active_budget_id || null }
 
+  function load() {
+    NP.req('GET', '/api/budgets').then(
+      function (res) { state.budgets = (res && res.data) || [] },
+      function () { state.budgets = [] }
+    )
+  }
 
+  function switchTo(id) {
+    if (!id || id === state.active) return
+    NP.req('POST', '/api/budgets/' + id + '/switch').then(function () {
+      window.location.reload()
+    })
+  }
 
-	// Display entry details
+  var Switcher = {
+    oninit: load,
+    view: function () {
+      if (state.budgets === null) return null // still loading
+      if (!state.budgets.length) return m('span.text-sm.text-muted', 'No budgets yet')
 
-	$('.get-ent-details').click(function()
-	{
-		var $target = $(this).attr('data-entid');
-		var $button_location = $(this);
-		if($button_location.attr('data-expanded')==1)
-		{
-			$button_location.closest('tr').next().remove();
-			$button_location.attr('data-expanded',0);
-			$button_location.children().first().removeClass('glyphicon-chevron-up').addClass('glyphicon-chevron-down');
-			return false;
-		}
+      // If the session's active budget isn't one we can reach (access lost), fall
+      // back to a placeholder rather than silently showing the wrong budget.
+      var inList = state.budgets.some(function (b) { return b.id === state.active })
+      var options = state.budgets.map(function (b) {
+        var label = b.name + (b.role && b.role !== 'owner' ? ' (' + b.role + ')' : '')
+        return m('option', { value: b.id, selected: inList && b.id === state.active }, label)
+      })
+      if (!inList) {
+        options.unshift(m('option', { value: '', selected: true, disabled: true }, 'Select budget…'))
+      }
+      // Full width in the mobile accordion; a fixed width on desktop.
+      return NP.select(options, {
+        'aria-label': 'Active budget',
+        onchange: function (e) { switchTo(Number(e.target.value)) },
+      }, 'w-full sm:w-56')
+    },
+  }
 
-		// build new tr with info loading display
-		var $loading = $('#entry-template-loading').html();
-		$loading = $loading.replace(/{entid}/gim,$target);
-		$button_location.closest('tr').after($loading);
-		var $main_template = $('#entry-template-main').html();
-		
-		// now we need the data
-
-		$.ajax({
-            type: 'GET',
-            url: '/api/entry_detail/'+$target,
-            data: '',
-            dataType: 'html',
-            success: function(response) {
-
-                
-                 var $data = jQuery.parseJSON(response);
-                $('.entry-'+$target).remove();
-                $button_location.attr('data-expanded',1);
-                $button_location.children().first().addClass('glyphicon-chevron-up').removeClass('glyphicon-chevron-down');
-                // we need to read template and sub vals
-                //$main_template = $main_template.replace("{entid}",$data[0].entid);
-                $main_template = $main_template.replace(/{entid}/gim, $data[0].entid);
-                $main_template = $main_template.replace(/{purchase_date}/gim,$data[0].purchase_date);
-                $main_template = $main_template.replace(/{type}/gim,$data[0].type);
-                $main_template = $main_template.replace(/{description}/gim,$data[0].description);
-                $main_template = $main_template.replace(/{total_amount}/gim,$data[0].total_amount);
-                $main_template = $main_template.replace(/{paid_to}/gim,$data[0].paid_to);
-                $button_location.closest('tr').after($main_template);
-                for(var $i=0; $i < $data[0].section.length; $i++)
-                {
-                	var $from_template = $('#entry-template-from').html();
-                	var $paid_from = '';
-                	$from_template = $from_template.replace(/{amount}/gim,$data[0].section[$i].amount);
-                	$from_template = $from_template.replace(/{ucid}/gim,$data[0].section[$i].ucid);
-                	if($data[0].section[$i].paid_from == 1)
-                	{
-                		$paid_from = '(Savings)';
-                	}
-                	$from_template = $from_template.replace(/{paid_from}/gim,$paid_from);
-                	$('.entid-'+$target).after($from_template);
-                }
-                //$button_location.closest('tr').prev().remove();
-                //$button_location.closest('tr').remove();
-
-
-                
-            },
-          
-            timeout: function(response) {
-            },
-            error: function(response,two,three) {
-                 var $result = jQuery.parseJSON(response.responseText);
-                 var $errors = $result.errors;
-                 var $displayme = '';
-                 for (var key in $errors)
-                 {
-                 	if($errors[key] instanceof Array)
-                 	{
-                     	$displayme = $displayme + '<div class="alert alert-warning">'+$errors[key][0]+'</div>';
-                 		
-                 	}
-                 	else
-                 	{
-                     	$displayme = $displayme + '<div class="alert alert-warning">'+$errors[key]+'</div>';
-                 	}
-                     
-                 }
-                 $('.entry-'+$target).html($displayme);
-            }
-        });
-        return false;
-
-
-	});
-
-	// Redirect-me
-	$('.redirect-me').submit(function()
-	{
-		// Do redirect
-		var $cat = $('#cat_1 option:selected').first().val();
-		var $range = $('#date_range option:selected').first().val();
-		window.location = '/history/' + $cat + '/' + $range;
-		return false;
-	});
-
-
-	// Ajax-me
-
-	$('.ajax-me').submit(function()
-    {
-        var $saving = '<div class="alert alert-info" role="alert"><span class="glyphicon glyphicon-cloud-upload"></span> Processing..</div>';
-        var $ok = '<div class="alert alert-success" role="alert"><span class="glyphicon glyphicon-ok"></span> Process Successful.</div>';
-        $('.btns-to-toggle').hide();
-        var $identifier = $(this).attr('data-id');
-        var $target = $(this).attr('data-target');
-        var $params = $(this).serialize();
-
-        $('.'+$identifier+'-status').html($saving);
-        
-         
-        $.ajax({
-                type: 'POST',
-                url: $(this).attr('action'),
-                data: $params,
-                dataType: 'json',
-                success: function(response) {
-                    
-                    $('.'+$identifier+'-status').html($ok);
-                    window.location=$target;
-                    
-                },
-              
-                timeout: function(response) {
-                },
-                error: function(response,two,three) {
-                     var $result = jQuery.parseJSON(response.responseText);
-                     var $errors = $result.errors;
-                     var $displayme = '';
-                     for (var key in $errors)
-                     {
-                     	if($errors[key] instanceof Array)
-                     	{
-                         	$displayme = $displayme + '<div class="alert alert-warning">'+$errors[key][0]+'</div>';
-                     		
-                     	}
-                     	else
-                     	{
-                         	$displayme = $displayme + '<div class="alert alert-warning">'+$errors[key]+'</div>';
-                     	}
-                         
-                     }
-                     $('.'+$identifier+'-messages').html($displayme);
-                     scroll(0,0);
-                     $('.btns-to-toggle').show();
-                     $('.'+$identifier+'-status').html('');
-                }
-            });
-            return false;
-    });
-
-	// Entry Add
-
-	if($('.entry-add').length)
-	{
-		$('.using-manual-date').click(function()
-		{
-			if(this.checked)
-			{
-				$('.date-dd').hide();
-				$('.date-txt').show();
-			}
-			else
-			{
-				$('.date-dd').show();
-				$('.date-txt').hide();
-			}
-
-		});
-		$('.using-multi-cats').click(function()
-		{
-			if(this.checked)
-			{
-				$('.multi-cats').show();
-			}
-			else
-			{
-				$('.multi-cats').hide();
-			}
-
-		});
-	}
-
-	//Budget
-
-	$('.filter-budget input').click(function()
-	{
-		$('tr').hide();
-
-		var sum = 0;
-		var curClass = '';
-
-		$('.filter-budget input:checked').each(function()
-		{
-			curClass = $(this).val();
-			$('tr.'+$(this).val()).each(function() {
-				$(this).show();
-				if(curClass == 'c20') {
-					sum += parseFloat($(this).data('toplimit'));
-				}
-				
-			});
-			
-		});
-
-		$('.budget-sum').html(sum.toFixed(2));
-		$('.tr-sum').show();
-	});
-
-	if($('.budget-edit-view').length)
-	{
-		// hit appropriate class button for good labels/text
-		
-	}
-
-	$('.budget-add-buttons button').click(function()
-	{
-		if($('.budget-view').length)
-		{
-			if($(this).hasClass('cc-btn'))
-			{
-				// update form
-				$('form legend').html('Add a Credit Card');
-				$('form label[for="category_name"]').html('Credit Card Name');
-				$('form label[for="top_limit"]').html('Credit Card Limit');
-				$('form input[name="category_name"]').attr('placeholder','Enter Credit Card Name');
-				$('.if-cc').show();
-				$('form input[type="submit"]').val('Create Credit Card');
-				$('form input[name="class"]').val('credit_card');
-			}
-			else if($(this).hasClass('cat-btn'))
-			{
-				// update form
-				$('form legend').html('Add a Category');
-				$('form label[for="category_name"]').html('Category Name');
-				$('form label[for="top_limit"]').html('Monthly Spending Limit');
-				$('form input[name="category_name"]').attr('placeholder','Enter Category Name');
-				$('form input[name="class"]').val('standard');
-				$('.if-cc').hide();
-				$('form input[type="submit"]').val('Create Category');
-			}
-			else if($(this).hasClass('sav-btn'))
-			{
-				// update form
-				$('form legend').html('Add a Savings Category');
-				$('form label[for="category_name"]').html('Savings Category Name');
-				$('form label[for="top_limit"]').html('Monthly Savings Goal');
-				$('form input[name="category_name"]').attr('placeholder','Enter Savings Category Name');
-				$('form input[name="class"]').val('savings');
-				$('.if-cc').hide();
-				$('form input[type="submit"]').val('Create Savings Category');
-			}
-			else if($(this).hasClass('exsav-btn'))
-			{
-				// update form
-				$('form legend').html('Add an External Savings Category');
-				$('form label[for="category_name"]').html('Savings Category Name');
-				$('form label[for="top_limit"]').html('Monthly Savings Goal');
-				$('form input[name="category_name"]').attr('placeholder','Enter Savings Category Name');
-				$('form input[name="class"]').val('ext_savings');
-				$('.if-cc').hide();
-				$('form input[type="submit"]').val('Create External Savings Category');
-			}
-		}
-		else if($('.budget-edit-view').length)
-		{
-			if($(this).hasClass('cc-btn'))
-			{
-				// update form
-				$('form legend').html('Update Credit Card');
-				$('form label[for="category_name"]').html('Credit Card Name');
-				$('form label[for="top_limit"]').html('Credit Card Limit');
-				$('form input[name="category_name"]').attr('placeholder','Enter Credit Card Name');
-				$('.if-cc').show();
-				$('form input[type="submit"]').val('Update Credit Card');
-				$('form input[name="class"]').val('credit_card');
-			}
-			else if($(this).hasClass('cat-btn'))
-			{
-				// update form
-				$('form legend').html('Update Category');
-				$('form label[for="category_name"]').html('Category Name');
-				$('form label[for="top_limit"]').html('Monthly Spending Limit');
-				$('form input[name="category_name"]').attr('placeholder','Enter Category Name');
-				$('form input[name="class"]').val('standard');
-				$('.if-cc').hide();
-				$('form input[type="submit"]').val('Update Category');
-			}
-			else if($(this).hasClass('sav-btn'))
-			{
-				// update form
-				$('form legend').html('Update Savings Category');
-				$('form label[for="category_name"]').html('Savings Category Name');
-				$('form label[for="top_limit"]').html('Monthly Savings Goal');
-				$('form input[name="category_name"]').attr('placeholder','Enter Savings Category Name');
-				$('form input[name="class"]').val('savings');
-				$('.if-cc').hide();
-				$('form input[type="submit"]').val('Update Savings Category');
-			}
-			else if($(this).hasClass('exsav-btn'))
-			{
-				// update form
-				$('form legend').html('Update External Savings Category');
-				$('form label[for="category_name"]').html('Savings Category Name');
-				$('form label[for="top_limit"]').html('Monthly Savings Goal');
-				$('form input[name="category_name"]').attr('placeholder','Enter Savings Category Name');
-				$('form input[name="class"]').val('savings');
-				$('.if-cc').hide();
-				$('form input[type="submit"]').val('Update External Savings Category');
-			}
-		}
-		
-		$('.budget-add-buttons button').attr('disabled',false).removeClass('btn-primary').addClass('btn-default');
-		$(this).attr('disabled',true).addClass('btn-primary').removeClass('btn-default');
-
-	});
-});
+  m.mount(el, Switcher)
+})()
