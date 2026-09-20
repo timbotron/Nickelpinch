@@ -107,14 +107,14 @@
   function cLoad() { C.items = null; NP.req('GET', '/api/budgets/' + bid + '/categories').then(function (r) { C.items = r.data }, function () { C.items = [] }) }
   // Savings envelopes can be pinned to a bank account, so the form needs the account
   // list loaded (reuses the Accounts tab's state).
-  function cNew() { cReset(); if (A.items === null) aLoad(); C.form = { name: '', type: 'standard', monthly_limit: '0', rollover_rule: 'accumulate', account_id: '' } }
-  function cEdit(c) { cReset(); if (A.items === null) aLoad(); C.editId = c.id; C.form = { name: c.name, type: c.type, monthly_limit: c.monthly_limit, rollover_rule: c.rollover_rule, account_id: c.account_id == null ? '' : String(c.account_id) } }
+  function cNew() { cReset(); if (A.items === null) aLoad(); if (G.items === null) gLoad(); C.form = { name: '', type: 'standard', monthly_limit: '0', rollover_rule: 'accumulate', account_id: '', group_id: '' } }
+  function cEdit(c) { cReset(); if (A.items === null) aLoad(); if (G.items === null) gLoad(); C.editId = c.id; C.form = { name: c.name, type: c.type, monthly_limit: c.monthly_limit, rollover_rule: c.rollover_rule, account_id: c.account_id == null ? '' : String(c.account_id), group_id: c.group_id == null ? '' : String(c.group_id) } }
   function cSave() {
     C.errors = null
     var f = C.form
     var url = '/api/budgets/' + bid + '/categories' + (C.editId ? '/' + C.editId : '')
-    NP.req(C.editId ? 'PUT' : 'POST', url, { name: f.name, type: f.type, monthly_limit: f.monthly_limit, rollover_rule: f.rollover_rule, account_id: f.account_id === '' ? null : Number(f.account_id) })
-      .then(function () { cReset(); cLoad() }, function (e) { C.errors = errsOf(e) })
+    NP.req(C.editId ? 'PUT' : 'POST', url, { name: f.name, type: f.type, monthly_limit: f.monthly_limit, rollover_rule: f.rollover_rule, account_id: f.account_id === '' ? null : Number(f.account_id), group_id: f.group_id === '' ? null : Number(f.group_id) })
+      .then(function () { cReset(); cLoad(); gLoad() }, function (e) { C.errors = errsOf(e) })
   }
   // Bank-account picker, shown only for savings envelopes (null = held externally).
   function catAccountField(f) {
@@ -138,6 +138,7 @@
       field('Monthly limit / goal', f.monthly_limit, function (v) { f.monthly_limit = v }, { ph: '0.00' }),
       field('Rollover', f.rollover_rule, function (v) { f.rollover_rule = v }, { options: ROLLOVER }),
       catAccountField(f),
+      catGroupField(f),
       errLine(C.errors),
       m('.mt-3.flex.gap-2', [
         m('button.btn', { onclick: cSave }, C.editId ? 'Save' : 'Add category'),
@@ -145,15 +146,84 @@
       ]),
     ])
   }
+  // ---- category groups (CODE-352): create / rename / delete / reorder, plus the
+  // per-category group picker. A group just brings envelopes together for the
+  // overview rollup — it never receives money itself.
+  var G = { items: null, form: null, editId: null, errors: null }
+  function gReset() { G.form = null; G.editId = null; G.errors = null }
+  function gLoad() { G.items = null; NP.req('GET', '/api/budgets/' + bid + '/category-groups').then(function (r) { G.items = r.data }, function () { G.items = [] }) }
+  function gNew() { gReset(); G.form = { name: '' } }
+  function gEdit(g) { gReset(); G.editId = g.id; G.form = { name: g.name } }
+  function gSave() {
+    G.errors = null
+    var url = '/api/budgets/' + bid + '/category-groups' + (G.editId ? '/' + G.editId : '')
+    NP.req(G.editId ? 'PUT' : 'POST', url, { name: G.form.name }).then(function () { gReset(); gLoad() }, function (e) { G.errors = errsOf(e) })
+  }
+  function gDel(g) {
+    if (!confirm('Delete group "' + g.name + '"? Its envelopes stay — just ungrouped.')) return
+    NP.req('DELETE', '/api/budgets/' + bid + '/category-groups/' + g.id).then(function () { gLoad(); cLoad() })
+  }
+  // Reorder by swapping neighbours and POSTing the full id order back.
+  function gMove(i, dir) {
+    var j = i + dir
+    if (j < 0 || j >= G.items.length) return
+    var order = G.items.map(function (x) { return x.id })
+    var t = order[i]; order[i] = order[j]; order[j] = t
+    NP.req('POST', '/api/budgets/' + bid + '/category-groups/reorder', { order: order }).then(function (r) { G.items = r.data })
+  }
+  function groupName(id) { var g = (G.items || []).filter(function (x) { return x.id === id })[0]; return g ? g.name : '' }
+  // The group picker on the category form — shown for every type (savings included).
+  function catGroupField(f) {
+    var opts = [['', 'None — ungrouped']].concat((G.items || []).map(function (g) { return [g.id, g.name] }))
+    return field('Group', f.group_id, function (v) { f.group_id = v }, { options: opts })
+  }
+  function groupForm() {
+    return m('.card.mb-3', [
+      m('p.eyebrow', G.editId ? 'Rename group' : 'New group'),
+      field('Name', G.form.name, function (v) { G.form.name = v }, { ph: 'Bills' }),
+      errLine(G.errors),
+      m('.mt-3.flex.gap-2', [
+        m('button.btn', { onclick: gSave }, G.editId ? 'Save' : 'Add group'),
+        m('button.btn-outline', { onclick: gReset }, 'Cancel'),
+      ]),
+    ])
+  }
+  function groupsSection() {
+    if (G.items === null) { gLoad(); return m('p.text-muted', 'Loading groups…') }
+    return m('.mb-6', [
+      m('.mb-2.flex.items-center.justify-between', [
+        m('p.eyebrow.mb-0', 'Groups'),
+        !G.form ? m('button.options-btn.text-accent', { onclick: gNew, title: 'New group' }, '+ Group') : null,
+      ]),
+      G.form ? groupForm() : null,
+      G.items.length ? G.items.map(function (g, i) {
+        return m('.card.mb-2.flex.items-center.justify-between', [
+          m('div', [
+            m('span.font-medium', g.name),
+            m('span.mono.ml-2.text-xs.text-muted', g.category_ids.length + (g.category_ids.length === 1 ? ' envelope' : ' envelopes')),
+          ]),
+          m('.flex.gap-2', [
+            m('button.options-btn', { onclick: function () { gMove(i, -1) }, title: 'Move up', disabled: i === 0 }, '↑'),
+            m('button.options-btn', { onclick: function () { gMove(i, 1) }, title: 'Move down', disabled: i === G.items.length - 1 }, '↓'),
+            m('button.options-btn', { onclick: function () { gEdit(g) }, title: 'Rename' }, '✎'),
+            m('button.options-btn', { onclick: function () { gDel(g) }, title: 'Delete' }, '✕'),
+          ]),
+        ])
+      }) : m('p.text-muted.text-sm', 'No groups yet. Group related envelopes (e.g. “Bills”) to roll them up on the overview.'),
+    ])
+  }
+
   function categoriesTab() {
     if (!bid) return needBudget()
     if (C.items === null) { cLoad(); return m('p.text-muted', 'Loading…') }
     return m('div', [
+      groupsSection(),
       C.form ? categoryForm() : m('button.btn.mb-4', { onclick: cNew }, '+ New category'),
       C.items.length ? C.items.map(function (c) {
         return m('.card.mb-2.flex.items-center.justify-between', [
           m('div', [
             m('span.font-medium', c.name),
+            c.group_id ? m('span.mono.ml-2.text-xs.text-accent', groupName(c.group_id)) : null,
             m('span.mono.ml-2.text-xs.text-muted', c.type + ' · ' + c.rollover_rule),
             m('.mono.text-sm.text-muted', 'limit ' + c.monthly_limit + ' · spent ' + c.spent + ' · saved ' + c.saved),
           ]),
