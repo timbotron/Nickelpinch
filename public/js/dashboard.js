@@ -12,11 +12,24 @@
 
   function savedView() { try { return localStorage.getItem('np-dash-view') } catch (e) { return null } }
 
+  // Per-viewer group collapse state, keyed by budget. Groups are collapsed by
+  // default; we persist only the set the viewer has expanded (CODE-351).
+  var GKEY = 'np-dash-groups-' + bid
+  function loadExpanded() { try { return JSON.parse(localStorage.getItem(GKEY) || '[]') } catch (e) { return [] } }
+
   var state = {
     loading: true,
     error: false,
     data: null,
     detailed: savedView() !== 'simple', // detailed by default; the health bars are the point
+    expanded: {}, // group id -> true when expanded
+  }
+  loadExpanded().forEach(function (id) { state.expanded[id] = true })
+
+  function toggleGroup(id) {
+    if (state.expanded[id]) delete state.expanded[id]
+    else state.expanded[id] = true
+    try { localStorage.setItem(GKEY, JSON.stringify(Object.keys(state.expanded).map(Number))) } catch (e) {}
   }
 
   function load() {
@@ -77,7 +90,41 @@
     ])
   }
 
+  // A group renders as a collapsible header: its rolled-up "left" (Σ children) and a
+  // child count; collapsed & detailed it also shows a summary health bar. Expanded,
+  // the child envelopes render indented beneath.
+  function groupRow(g, kids) {
+    var open = !!state.expanded[g.id]
+    var overspent = Number(g.remaining) < 0
+    return m('.border-b.border-line', [
+      m('.flex.cursor-pointer.items-center.justify-between.gap-3.py-3', {
+        onclick: function () { toggleGroup(g.id) },
+        role: 'button', 'aria-expanded': open ? 'true' : 'false',
+      }, [
+        m('.flex.items-center.gap-2', [
+          m('span.mono.text-xs.text-muted', open ? '▾' : '▸'),
+          m('span.font-medium', g.name),
+          m('span.mono.text-xs.text-muted', '(' + kids.length + ')'),
+        ]),
+        m('span.mono.text-sm' + (overspent ? '.text-red-300' : '.text-muted'), money(g.remaining)),
+      ]),
+      state.detailed && !open ? m('.pb-3', healthBar(g)) : null,
+      open ? m('.border-t.border-line.pl-3', kids.map(categoryRow)) : null,
+    ])
+  }
+
   function categoriesPanel(d) {
+    var groups = d.groups || []
+    var groupIds = {}
+    groups.forEach(function (g) { groupIds[g.id] = true })
+    // Bucket categories under their group; anything ungrouped (or whose group didn't
+    // come back, e.g. only-archived) renders flat.
+    var byGroup = {}
+    var ungrouped = []
+    d.categories.forEach(function (c) {
+      if (c.group_id != null && groupIds[c.group_id]) { (byGroup[c.group_id] = byGroup[c.group_id] || []).push(c) }
+      else ungrouped.push(c)
+    })
     return m('.card', [
       m('.mb-2.flex.items-center.justify-between', [
         m('p.eyebrow.mb-0', 'Envelopes'),
@@ -86,7 +133,10 @@
           m('button.options-btn' + (!state.detailed ? '.text-accent' : ''), { onclick: function () { setDetailed(false) } }, 'Simple'),
         ]),
       ]),
-      d.categories.length ? d.categories.map(categoryRow) : m('p.text-muted.text-sm', 'No envelopes yet.'),
+      d.categories.length ? [
+        groups.map(function (g) { return groupRow(g, byGroup[g.id] || []) }),
+        ungrouped.map(categoryRow),
+      ] : m('p.text-muted.text-sm', 'No envelopes yet.'),
     ])
   }
 

@@ -47,6 +47,18 @@ INSERT INTO categories (id, budget_id, name, type, monthly_limit, spent, saved, 
   (6, 2, 'Software',  'standard', 100.00,  45.00,    0.00, 'accumulate', NULL, 0),
   (7, 3, 'Utilities', 'standard', 250.00, 120.00,    0.00, 'accumulate', NULL, 0);
 
+-- A "Bills" display group (CODE-348) in Household with a few fixed monthly bills.
+-- Rent + Internet are paid (spent = limit → 0 left); Car insurance is unpaid, so the
+-- collapsed group header rolls up to $140.00 still to pay. The group must exist before
+-- the categories that point at it (categories.group_id FK).
+INSERT INTO category_groups (id, budget_id, name, `rank`) VALUES
+  (1, 1, 'Bills', 0);
+
+INSERT INTO categories (id, budget_id, name, type, monthly_limit, spent, saved, rollover_rule, account_id, group_id, `rank`) VALUES
+  (8,  1, 'Rent',          'standard', 1800.00, 1800.00, 0.00, 'reset', NULL, 1, 5),
+  (9,  1, 'Car insurance', 'standard',  140.00,    0.00, 0.00, 'reset', NULL, 1, 6),
+  (10, 1, 'Internet',      'standard',   70.00,   70.00, 0.00, 'reset', NULL, 1, 7);
+
 -- A little history for Household (shape matches EntryService: purchase splits are
 -- positive with from_saved = 0; a deposit has no splits).
 INSERT INTO entries (id, budget_id, created_by, type, entry_date, total_amount, description, account_id, to_account_id) VALUES

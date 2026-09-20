@@ -62,6 +62,8 @@ class Dashboard extends Base {
         )->fetchAll(\PDO::FETCH_ASSOC));
 
         // Active envelopes with server-computed remaining = (limit + saved) − spent.
+        // group_id files an envelope under a display group (CODE-351); the client
+        // buckets by it and rolls the group up.
         $categories = array_map(function ($c) {
             return [
                 'id' => (int) $c['id'],
@@ -72,11 +74,43 @@ class Dashboard extends Base {
                 'saved' => $c['saved'],
                 'remaining' => $c['remaining'],
                 'account_id' => $c['account_id'] === null ? null : (int) $c['account_id'],
+                'group_id' => $c['group_id'] === null ? null : (int) $c['group_id'],
             ];
         }, $this->db->query(
-            'SELECT id, name, type, monthly_limit, spent, saved, account_id, (monthly_limit + saved - spent) AS remaining
+            'SELECT id, name, type, monthly_limit, spent, saved, account_id, group_id, (monthly_limit + saved - spent) AS remaining
              FROM categories WHERE budget_id = :b AND type != :arch ORDER BY `rank` ASC, id ASC',
             [':b' => $b, ':arch' => 'archived']
+        )->fetchAll(\PDO::FETCH_ASSOC));
+
+        // Display groups with their server-computed rollup — summed over a group's
+        // non-archived children (the same figures per envelope, one level up). Only
+        // groups with at least one active child appear on the dashboard; empty ones
+        // are managed elsewhere. `remaining` is the header's "left".
+        $groups = array_map(function ($g) {
+            return [
+                'id' => (int) $g['id'],
+                'name' => $g['name'],
+                'rank' => (int) $g['rank'],
+                'child_count' => (int) $g['child_count'],
+                'monthly_limit' => $g['monthly_limit'],
+                'spent' => $g['spent'],
+                'saved' => $g['saved'],
+                'remaining' => $g['remaining'],
+            ];
+        }, $this->db->query(
+            "SELECT g.id, g.name, g.`rank`,
+                    COUNT(c.id) AS child_count,
+                    COALESCE(SUM(c.monthly_limit), 0.00) AS monthly_limit,
+                    COALESCE(SUM(c.spent), 0.00) AS spent,
+                    COALESCE(SUM(c.saved), 0.00) AS saved,
+                    COALESCE(SUM(c.monthly_limit + c.saved - c.spent), 0.00) AS remaining
+             FROM category_groups g
+             LEFT JOIN categories c ON c.group_id = g.id AND c.type != 'archived'
+             WHERE g.budget_id = :b
+             GROUP BY g.id, g.name, g.`rank`
+             HAVING child_count > 0
+             ORDER BY g.`rank` ASC, g.id ASC",
+            [':b' => $b]
         )->fetchAll(\PDO::FETCH_ASSOC));
 
         // The Extra rollup, computed entirely in DECIMAL. remaining_budget and saved
@@ -103,6 +137,7 @@ class Dashboard extends Base {
             ],
             'accounts' => $accounts,
             'categories' => $categories,
+            'groups' => $groups,
             'rollup' => [
                 'bank_total' => $rollup['bank_total'],
                 'remaining_budget' => $rollup['remaining_budget'],
