@@ -44,12 +44,32 @@ CREATE TABLE `accounts` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
+-- category_groups: an optional display grouping for categories within a budget
+-- (e.g. "Bills"). Organizational only — no balances, no limit; entries never
+-- target a group. The overview rolls its children up to one "left" figure and
+-- expands to show them. Deleting a group ungroups its children (SET NULL), not
+-- deletes them.
+-- --------------------------------------------------------
+CREATE TABLE `category_groups` (
+  `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
+  `budget_id` int UNSIGNED NOT NULL,
+  `name` varchar(200) COLLATE utf8mb4_general_ci NOT NULL,
+  `rank` int NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `category_groups_budget_rank_idx` (`budget_id`, `rank`),
+  CONSTRAINT `fk_category_groups_budget` FOREIGN KEY (`budget_id`) REFERENCES `budgets` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
 -- categories: spending/savings envelopes. `spent` = consumed this period,
 -- `monthly_limit` = budget/goal, `saved` = rollover. rollover_rule decides what
 -- the monthly reset does with the remainder. `account_id` (savings only) pins the
 -- envelope to the bank account holding it: set = in that tracked bank, NULL = held
 -- outside tracked accounts (what "external savings" used to mean). The Extra rollup
--- counts a savings envelope only when it is pinned to an account.
+-- counts a savings envelope only when it is pinned to an account. `group_id`
+-- (optional) files the envelope under a display group (see `category_groups`);
+-- NULL = ungrouped, shown flat.
 -- --------------------------------------------------------
 CREATE TABLE `categories` (
   `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -61,13 +81,16 @@ CREATE TABLE `categories` (
   `saved` decimal(22,2) NOT NULL DEFAULT 0.00,
   `rollover_rule` enum('accumulate','reset') COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'accumulate',
   `account_id` int UNSIGNED DEFAULT NULL,
+  `group_id` int UNSIGNED DEFAULT NULL,
   `rank` int NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `categories_budget_rank_idx` (`budget_id`, `rank`),
   KEY `categories_account_idx` (`account_id`),
+  KEY `categories_group_idx` (`group_id`),
   CONSTRAINT `fk_categories_budget` FOREIGN KEY (`budget_id`) REFERENCES `budgets` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_categories_account` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+  CONSTRAINT `fk_categories_account` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_categories_group` FOREIGN KEY (`group_id`) REFERENCES `category_groups` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
