@@ -3,6 +3,7 @@
 use App\Controllers\Account;
 use App\Controllers\Budget;
 use App\Controllers\Category;
+use App\Controllers\CategoryGroup;
 use App\Controllers\Dashboard;
 use App\Controllers\Entry;
 use App\Controllers\Home;
@@ -45,6 +46,16 @@ return function (RouteCollector $r) {
     $r->post('/api/budgets/{b:\d+}/categories', [Category::class, 'create']);
     $r->put('/api/budgets/{b:\d+}/categories/{c:\d+}', [Category::class, 'update']);
     $r->delete('/api/budgets/{b:\d+}/categories/{c:\d+}', [Category::class, 'delete']);
+
+    // Category groups API (CODE-350). Optional display grouping of categories (e.g.
+    // "Bills"); the dashboard rolls a group's children up. Same gate as categories:
+    // index READ_FULL, mutations WRITE + CSRF. Assigning a category to a group is on
+    // the category (its group_id), not here. reorder takes {order:[id,...]}.
+    $r->get('/api/budgets/{b:\d+}/category-groups', [CategoryGroup::class, 'index']);
+    $r->post('/api/budgets/{b:\d+}/category-groups', [CategoryGroup::class, 'create']);
+    $r->post('/api/budgets/{b:\d+}/category-groups/reorder', [CategoryGroup::class, 'reorder']);
+    $r->put('/api/budgets/{b:\d+}/category-groups/{g:\d+}', [CategoryGroup::class, 'update']);
+    $r->delete('/api/budgets/{b:\d+}/category-groups/{g:\d+}', [CategoryGroup::class, 'delete']);
 
     // Monthly reset (D3). Close the month / undo the last reset. WRITE + CSRF.
     $r->post('/api/budgets/{b:\d+}/reset', [Reset::class, 'create']);

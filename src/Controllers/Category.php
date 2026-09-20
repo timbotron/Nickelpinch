@@ -29,7 +29,7 @@ class Category extends Base {
 
     // Columns returned to the client (never budget_id / timestamps). account_id pins
     // a savings envelope to the bank account holding it (null = held externally).
-    const OUT = ['id', 'name', 'type', 'monthly_limit', 'spent', 'saved', 'rollover_rule', 'account_id', 'rank'];
+    const OUT = ['id', 'name', 'type', 'monthly_limit', 'spent', 'saved', 'rollover_rule', 'account_id', 'group_id', 'rank'];
 
     // GET /api/budgets/{b}/categories — ordered by rank then id (the dashboard order).
     public function index($vars) {
@@ -146,11 +146,30 @@ class Category extends Base {
             $fields['account_id'] = null;
         }
 
+        // group_id files the envelope under a display group (CODE-350). Unlike the
+        // savings-only account_id, any type may be grouped. null / '' = ungrouped.
+        if(array_key_exists('group_id', $input)) {
+            $g = $input['group_id'];
+            $fields['group_id'] = ($g === null || $g === '') ? null : $this->clean_group($g, $budgetId);
+        }
+
         if(array_key_exists('rank', $input)) {
             $fields['rank'] = $this->clean_rank($input['rank']);
         }
 
         return $fields;
+    }
+
+    // Validate a group pointer: it must be a category_group in this budget. Returns
+    // the id, or 422 out. Same-budget check is what rejects a cross-budget group_id.
+    private function clean_group($raw, int $budgetId): int {
+        if(!is_numeric($raw)) {
+            $this->json(['errors' => ['group_id' => ['Must be a group id.']]], 422);
+        }
+        if(!$this->db->has('category_groups', ['id' => (int) $raw, 'budget_id' => $budgetId])) {
+            $this->json(['errors' => ['group_id' => ['Group not found in this budget.']]], 422);
+        }
+        return (int) $raw;
     }
 
     // Validate a savings envelope's pinned account: it must be a BANK account in this
@@ -188,6 +207,7 @@ class Category extends Base {
             'saved' => $r['saved'],
             'rollover_rule' => $r['rollover_rule'],
             'account_id' => $r['account_id'] === null ? null : (int) $r['account_id'],
+            'group_id' => $r['group_id'] === null ? null : (int) $r['group_id'],
             'rank' => (int) $r['rank'],
         ];
     }
