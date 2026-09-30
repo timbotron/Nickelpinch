@@ -1,0 +1,64 @@
+/* Nickelpinch styles on top of Hangar (CODE-382). Hangar draws every component
+   (.hud-*, tokens --hud-*); Tailwind is kept for layout utilities only; this file is
+   the cascade-layer setup, the brand overrides, and the brand mark. See doc/DESIGN.md.
+
+   Cascade layers (CODE-383). Hangar ships entirely inside @layer hangar.*, and
+   unlayered CSS beats every layer regardless of specificity — so Tailwind's
+   preflight (button/input resets) must live in a layer BELOW Hangar or it would
+   silently strip Hangar's component styling. The order `np-base, hangar` is declared
+   in templates/basic.php's <head>. Utilities and the brand overrides below stay
+   unlayered, so they still win over Hangar. */
+@layer np-base {
+  @tailwind base;
+
+  body {
+    line-height: 1.6;
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] body { color-scheme: light; }
+  ::selection { background: var(--hud-accent); color: var(--hud-bg-0); }
+}
+@tailwind components;
+@tailwind utilities;
+
+/* Brand overrides on Hangar's tokens. Unlayered, so they beat @layer hangar.tokens.
+   Only the accent trio is set: Hangar derives its HUD line and HUD text from
+   --hud-accent via color-mix(in oklch), so this rebrands the whole system. Dark is
+   Nickelpinch pale blue (#7fdbff), light the green (#51a351) — the light rule is
+   needed because this unlayered :root would otherwise beat Hangar's layered light
+   theme too. Fonts map to the families the shell loads. --np-canvas is the one token
+   of our own: the page behind Hangar's panels — Nickelpinch's black in dark. */
+:root {
+  --hud-accent: oklch(0.847 0.101 225.4);
+  --hud-accent-soft: oklch(0.847 0.101 225.4 / 0.16);
+  --hud-accent-line: oklch(0.847 0.101 225.4 / 0.45);
+  --hud-font-sans: "Hanken Grotesk", system-ui, -apple-system, sans-serif;
+  --hud-font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --np-canvas: #000000;
+}
+:root[data-theme="light"] {
+  --hud-accent: oklch(0.644 0.142 143.7);
+  --hud-accent-soft: oklch(0.644 0.142 143.7 / 0.10);
+  --hud-accent-line: oklch(0.644 0.142 143.7 / 0.55);
+  /* Our green is lighter than Hangar's light accent, so its default HUD-text mix
+     (78% toward --hud-text-1) only reached 4.12:1 on bg-1 — below AA — and mixing
+     toward text-1 also drags the hue to teal (text-1 carries hue 260). Mixing toward
+     black keeps the accent's hue (black's is powerless), as Hangar does for its status
+     inks: 70% lands 6.32:1 on bg-1 and >= 5.8:1 on every light surface incl. bg-3
+     hover, over Hangar's own ~6.2:1 target. */
+  --hud-text: color-mix(in oklch, var(--hud-accent) 70%, black);
+  --np-canvas: var(--hud-bg-0);
+}
+
+@layer components {
+  /* The brand mark — Hangar has no logo primitive. */
+  .brand {
+    @apply inline-flex items-center gap-2 font-mono text-lg font-bold no-underline;
+  }
+  .brand .dot {
+    @apply inline-block h-3 w-3;
+    background: var(--hud-accent);
+    box-shadow: 0 0 0 4px var(--hud-accent-soft);
+    border-radius: var(--hud-radius-sm);
+  }
+}

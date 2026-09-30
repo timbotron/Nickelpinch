@@ -1,8 +1,16 @@
-/bootstrap/compiled.php
 /vendor
+/config/_env.php
+/bin/tailwindcss
 composer.phar
 composer.lock
-.env.local.php
-.env.php
 .DS_Store
 Thumbs.db
+
+# session store contents (keep the dir)
+/storage/sessions/*
+!/storage/sessions/.gitkeep
+
+# planning docs + local AI guidance (not tracked)
+/doc
+/CLAUDE.md
+/.claude/settings.local.json

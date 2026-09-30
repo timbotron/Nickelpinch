@@ -1,49 +1,23 @@
 <?php
-/**
- * Laravel - A PHP Framework For Web Artisans
- *
- * @package  Laravel
- * @author   Taylor Otwell <taylorotwell@gmail.com>
- */
 
-/*
-|--------------------------------------------------------------------------
-| Register The Auto Loader
-|--------------------------------------------------------------------------
-|
-| Composer provides a convenient, automatically generated class loader
-| for our application. We just need to utilize it! We'll require it
-| into the script here so that we do not have to worry about the
-| loading of any our classes "manually". Feels great to relax.
-|
-*/
+use Initium\Admin\Routes as AdminRoutes;
+use Initium\Auth\Routes as AuthRoutes;
+use Initium\Config;
+use Initium\Kernel;
+use Initium\View;
 
-require __DIR__.'/../bootstrap/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../config/_env.php';
 
-/*
-|--------------------------------------------------------------------------
-| Turn On The Lights
-|--------------------------------------------------------------------------
-|
-| We need to illuminate PHP development, so let's turn on the lights.
-| This bootstraps the framework and gets it ready for use, then it
-| will load up this application so that we can run it and send
-| the responses back to the browser and delight these users.
-|
-*/
+// Fail fast with one clear message if any required constant is missing.
+Config::validate();
 
-$app = require_once __DIR__.'/../bootstrap/start.php';
+// Resolve the app's templates ahead of core defaults (override-first).
+View::override(__DIR__ . '/../templates');
 
-/*
-|--------------------------------------------------------------------------
-| Run The Application
-|--------------------------------------------------------------------------
-|
-| Once we have the application, we can simply call the run method,
-| which will execute the request and send the response back to
-| the client's browser allowing them to enjoy the creative
-| and wonderful application we have whipped up for them.
-|
-*/
-
-$app->run();
+// Sessions live above the web root, owned by the app.
+(new Kernel(__DIR__ . '/../storage/sessions'))
+    ->routes(require __DIR__ . '/../routes/web.php')   // app routes
+    ->routes([AuthRoutes::class, 'register'])          // core auth routes
+    ->routes([AdminRoutes::class, 'register'])         // core admin area (/admin)
+    ->run();

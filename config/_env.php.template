@@ -1,0 +1,26 @@
+<?php
+
+// Copy to _env.php and fill in real values. _env.php is gitignored and never committed.
+
+date_default_timezone_set('America/Los_Angeles');
+
+define('SITE_NAME', 'Nickelpinch');
+define('SITE_URL', 'http://localhost:8080/'); // trailing slash required; handlers build SITE_URL . 'path'
+define('DB_NAME', 'nickelpinch');
+define('DB_SERVER', 'db');   // docker-compose service name; use 127.0.0.1 when running bare-metal
+define('DB_USER', 'nickelpinch');
+define('DB_PASS', 'nickelpinch');
+define('EMAIL_MAILGUN_KEY', '');
+define('EMAIL_MAILGUN_DOMAIN', '');
+define('EMAIL_SUPPORT_ADDRESS', 'support@nickelpinch.com');
+define('ALLOW_SIGNUPS', 1);
+define('LOGIN_TIMEOUT', 336);        // hours, 336 = 2 weeks
+define('LOGIN_REDIRECT', 'home');    // where core sends users after login (path appended to SITE_URL)
+
+// Optional (core defaults apply if unset):
+// define('ADMIN_EMAIL', 'you@example.com');
+// define('LOGIN_THROTTLE_MAX', 10);
+// define('LOGIN_THROTTLE_WINDOW', 15);
+// define('TRUST_FORWARDED', true);   // ONLY behind a trusted reverse proxy (the Caddy stack)
+// define('FORCE_SECURE_COOKIES', true);
+// define('PASSWORD_RESET_TTL', 24);

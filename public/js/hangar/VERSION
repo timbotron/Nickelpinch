@@ -1,0 +1,4 @@
+@valeness/hangar 0.3.0 (npm, MIT — see LICENSE)
+Vendored: public/css/hangar.min.css (dist/hangar.min.css, sha256 77047176f18fdfaa…) + these js/ modules.
+Omitted: highcharts-theme.js, mermaid-theme.js (integrations for libraries we don't use).
+Pinned deliberately — each upgrade is its own ticket (CODE-382). Do not edit these files.
